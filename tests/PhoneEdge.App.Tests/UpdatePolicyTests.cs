@@ -62,8 +62,8 @@ public class UpdatePolicyTests
     [Fact]
     public void EmptyAndHugeNotesAreHandled()
     {
-        Assert.Contains("기록되지", ReleaseNotes.Clean("  "));
-        Assert.Contains("기록되지", ReleaseNotes.Clean(null));
+        Assert.Contains("기록되지", ReleaseNotes.Clean("  ", System.Globalization.CultureInfo.GetCultureInfo("ko")));
+        Assert.Contains("No release notes", ReleaseNotes.Clean(null, System.Globalization.CultureInfo.GetCultureInfo("en")));
         Assert.True(ReleaseNotes.Clean(new string('가', 10000)).Length <= ReleaseNotes.MaxLength + 3);
     }
 

@@ -19,7 +19,7 @@ Terms follow `CONTEXT.md`. A `CONTEXT.md` in a parent folder, if any, does not a
 | `src/PhoneEdge.Contracts/` | Management session | The contract between the two modules. Other sessions must not edit it |
 | `src/PhoneEdge.Phone/`, `tests/PhoneEdge.Phone.Tests/`, `spike/`, `tools/` (except the items below), `docs/phase0.md` | Phone engine session (Opus) | ADB, scrcpy server, UHID, phone cursor tracking |
 | `src/PhoneEdge.App/`, `tests/PhoneEdge.App.Tests/` | Windows input app session (Sonnet) | Hooks, edge detection, HID conversion, tray UI, update UI |
-| `.github/`, `scripts/`, `Directory.Build.props`, `CHANGELOG.md`, `README.md`, `THIRD-PARTY-NOTICES.md`, `docs/images/`, `tools/*.ps1`, `tools/versions.json` | Windows input app session (Sonnet) | Installer, release automation, documentation |
+| `.github/`, `scripts/`, `Directory.Build.props`, `CHANGELOG.md`, `README.md`, `README.ko.md`, `THIRD-PARTY-NOTICES.md`, `docs/images/`, `tools/*.ps1`, `tools/versions.json` | Windows input app session (Sonnet) | Installer, release automation, documentation |
 
 ## Rules for every session
 
@@ -29,6 +29,9 @@ Terms follow `CONTEXT.md`. A `CONTEXT.md` in a parent folder, if any, does not a
 - Repository: https://github.com/ssicci/phone-edge (public). Only the management session commits, pushes, tags and releases. Other sessions only edit files and do not change repository state with git commands (read-only commands such as `git status` and `git diff` are fine).
 - The repository is public: do not put phone serial numbers, user paths or company information in code, tests or documents.
 - Do not touch files outside this folder (`phone-edge/`).
-- **Language**: all `.md` documents are written in English. `CHANGELOG.md` is English followed by Korean for each version, because its text is shown unchanged in the app's update window and the app UI is Korean. App UI text and session reports to the user are in Korean.
-- Documentation images live in `docs/images/`. Regenerate the PNGs with `pwsh scripts/make-docs-images.ps1` after changing the app UI. The SVG diagrams are hand-written.
+- **Language**:
+  - Documents (`.md`) are written in English. The exceptions are `README.ko.md` (the Korean README, which must keep the same structure as `README.md`) and `CHANGELOG.md`, which is English followed by Korean for each version (a `---` line separates them) because the app's update window shows the part in the current language.
+  - The app UI is shown in Korean or English (Windows display language by default, selectable from the tray menu). Every user-visible string lives in `src/PhoneEdge.App/Resources/Strings.resx` (English, the default) and `Strings.ko.resx` (Korean). Add every new string to **both** files and reach it through `L.T("Key")`; never hard-code UI text. Logs and the phone engine's `Detail` text stay untranslated (developer-facing).
+  - Session reports to the user are in Korean.
+- Documentation images live in `docs/images/en/` and `docs/images/ko/` (one set per language). Regenerate the PNGs with `pwsh scripts/make-docs-images.ps1` after changing the app UI or any text. The SVG diagrams are hand-written, one copy per language.
 - Token economy: read only the files you need, do not write separate planning or analysis documents, and keep the final report within 15 lines (done / not done / how it was verified / requests to the management session).

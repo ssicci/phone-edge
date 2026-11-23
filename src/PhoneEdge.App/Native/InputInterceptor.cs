@@ -33,7 +33,7 @@ internal sealed class InputInterceptor : IDisposable
         {
             int err = Marshal.GetLastWin32Error();
             Dispose();
-            throw new InvalidOperationException("Raw Input 등록 실패: " + err);
+            throw new InvalidOperationException("Could not register Raw Input: " + err);
         }
 
         IntPtr module = GetModuleHandleW(null);
@@ -43,7 +43,7 @@ internal sealed class InputInterceptor : IDisposable
         {
             int err = Marshal.GetLastWin32Error();
             Dispose();
-            throw new InvalidOperationException("입력 훅 설치 실패: " + err);
+            throw new InvalidOperationException("Could not install the input hooks: " + err);
         }
     }
 

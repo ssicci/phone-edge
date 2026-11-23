@@ -17,8 +17,19 @@ if ($xml -notmatch '<Version>(\d+\.\d+\.\d+)</Version>') { throw "Directory.Buil
 $current = [version]$Matches[1]
 if ([version]$Version -lt $current) { throw "새 버전($Version)은 현재 버전($current)보다 높아야 합니다." }
 
+# "## [Unreleased]" 항목이 있고 이 버전의 항목이 아직 없으면, 제목을 이 버전과 오늘 날짜로 바꾼다.
+$changelogPath = Join-Path $root 'CHANGELOG.md'
+$changelog = Get-Content $changelogPath -Raw -Encoding UTF8
+$hasVersion = $changelog -match ('(?m)^##\s*\[' + [regex]::Escape($Version) + '\]')
+if (-not $hasVersion -and $changelog -match '(?m)^##\s*\[Unreleased\][^\r\n]*') {
+    $date = Get-Date -Format 'yyyy-MM-dd'
+    $changelog = [regex]::Replace($changelog, '(?m)^##\s*\[Unreleased\][^\r\n]*', "## [$Version] - $date", 1)
+    [IO.File]::WriteAllText($changelogPath, $changelog, (New-Object Text.UTF8Encoding($false)))
+    Write-Host "CHANGELOG.md: [Unreleased] -> [$Version] - $date"
+}
+
 # CHANGELOG 항목 확인 (없거나 비어 있으면 여기서 실패한다)
-$notes = & (Join-Path $PSScriptRoot 'Get-ChangelogEntry.ps1') -Version $Version -ChangelogPath (Join-Path $root 'CHANGELOG.md')
+$notes =& (Join-Path $PSScriptRoot 'Get-ChangelogEntry.ps1') -Version $Version -ChangelogPath (Join-Path $root 'CHANGELOG.md')
 if ($notes -notmatch '\S') { throw "CHANGELOG 항목이 비어 있습니다." }
 
 $new = [regex]::Replace($xml, '<Version>\d+\.\d+\.\d+</Version>', "<Version>$Version</Version>")

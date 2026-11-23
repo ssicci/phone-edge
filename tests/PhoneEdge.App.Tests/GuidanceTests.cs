@@ -26,7 +26,7 @@ public class GuidanceTests
     [Fact]
     public void TooltipShowsShortCause()
         => Assert.Equal("PhoneEdge - USB 디버깅 허용 필요",
-            TrayStatus.Tooltip(TrayIconKind.Problem, new(PhoneLinkProblem.Unauthorized, PhoneLinkWarnings.None, null)));
+            TrayStatus.Tooltip(TrayIconKind.Problem, new(PhoneLinkProblem.Unauthorized, PhoneLinkWarnings.None, null), System.Globalization.CultureInfo.GetCultureInfo("ko")));
 
     [Theory]
     [InlineData(false, InputMode.Laptop, PhoneLinkState.Ready, PhoneLinkProblem.None, TrayIconKind.Ready)]

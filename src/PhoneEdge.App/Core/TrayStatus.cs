@@ -15,15 +15,15 @@ public static class TrayStatus
         return diagnosis.Problem != PhoneLinkProblem.None ? TrayIconKind.Problem : TrayIconKind.Disconnected;
     }
 
-    public static string Tooltip(TrayIconKind kind, PhoneLinkDiagnosis diagnosis)
+    public static string Tooltip(TrayIconKind kind, PhoneLinkDiagnosis diagnosis, System.Globalization.CultureInfo? culture = null)
     {
         string text = kind switch
         {
-            TrayIconKind.Paused => "일시 정지",
-            TrayIconKind.Phone => "폰 모드",
-            TrayIconKind.Ready => diagnosis.Warnings != PhoneLinkWarnings.None ? "준비됨 (확인할 설정 있음)" : "준비됨",
-            TrayIconKind.Problem => GuidanceTable.For(diagnosis.Problem)?.ShortCause ?? "연결 문제",
-            _ => "연결 안 됨",
+            TrayIconKind.Paused => L.T("Tray_Paused", culture),
+            TrayIconKind.Phone => L.T("Tray_Phone", culture),
+            TrayIconKind.Ready => L.T(diagnosis.Warnings != PhoneLinkWarnings.None ? "Tray_ReadyWarn" : "Tray_Ready", culture),
+            TrayIconKind.Problem => GuidanceTable.For(diagnosis.Problem, culture)?.ShortCause ?? L.T("Tray_Problem", culture),
+            _ => L.T("Tray_Disconnected", culture),
         };
         return "PhoneEdge - " + text;   // NotifyIcon.Text 는 127자 이하
     }

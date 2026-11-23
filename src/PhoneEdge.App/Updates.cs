@@ -9,6 +9,8 @@ namespace PhoneEdge.App;
 internal static class AppInfo
 {
     /// <summary>"0.1.0" 형태. 빌드 메타데이터(+커밋)는 뗀다.</summary>
+    public static string SettingsPath => Path.Combine(Path.GetDirectoryName(Logger.FilePath)!, "settings.json");
+
     public static readonly string Version = (Assembly.GetEntryAssembly()?
         .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion ?? "0.0.0").Split('+')[0];
 }
@@ -44,20 +46,29 @@ internal sealed class UpdateService
     public void ApplyAndRestart(UpdateInfo info) => _manager.ApplyUpdatesAndRestart(info.TargetFullRelease);
 }
 
-/// <summary>새 버전 안내 창. 버튼 동작은 컨트롤러가 처리한다.</summary>
+/// <summary>새 버전 안내 창. 버튼 동작은 컨트롤러가 처리한다. 언어가 바뀌면 ApplyLanguage 로 문구를 다시 채운다.</summary>
 internal sealed class UpdateForm : Form
 {
     public enum Choice { Later, Skip, Update }
 
-    private readonly Button _update = new() { Text = "지금 업데이트", AutoSize = true };
-    private readonly Button _later = new() { Text = "나중에", AutoSize = true };
-    private readonly Button _skip = new() { Text = "이 버전 건너뛰기", AutoSize = true };
+    private readonly string _newVersion, _currentVersion, _rawNotes;
+    private readonly Button _update = new() { AutoSize = true };
+    private readonly Button _later = new() { AutoSize = true };
+    private readonly Button _skip = new() { AutoSize = true };
     private readonly ProgressBar _bar = new() { Width = 480, Visible = false };
     private readonly Label _status = new() { AutoSize = true, MaximumSize = new Size(480, 0), ForeColor = Color.DimGray };
+    private readonly Label _title = new() { AutoSize = true, MaximumSize = new Size(480, 0), Font = new Font(SystemFonts.MessageBoxFont!, FontStyle.Bold) };
+    private readonly Label _caption = new() { AutoSize = true, Margin = new Padding(0, 10, 0, 2) };
+    private readonly TextBox _box = new() { Multiline = true, ReadOnly = true, ScrollBars = ScrollBars.Vertical, Width = 480, Height = 260 };
+    private string _statusKey = "";
+    private int _percent;
 
-    public UpdateForm(string newVersion, string currentVersion, string notes, Func<UpdateForm, Choice, Task> onChoice)
+    /// <param name="rawNotes">릴리스 노트 마크다운 원문. 현재 언어 부분만 골라 보여 준다.</param>
+    public UpdateForm(string newVersion, string currentVersion, string? rawNotes, Func<UpdateForm, Choice, Task> onChoice)
     {
-        Text = "PhoneEdge - 업데이트";
+        _newVersion = newVersion;
+        _currentVersion = currentVersion;
+        _rawNotes = rawNotes ?? "";
         FormBorderStyle = FormBorderStyle.FixedDialog;
         MaximizeBox = MinimizeBox = ShowIcon = false;
         StartPosition = FormStartPosition.CenterScreen;
@@ -65,19 +76,11 @@ internal sealed class UpdateForm : Form
         AutoSizeMode = AutoSizeMode.GrowAndShrink;
         Padding = new Padding(16);
 
-        var title = new Label
-        {
-            Text = $"새 버전 {newVersion}이 있습니다 (현재 {currentVersion})",
-            AutoSize = true,
-            Font = new Font(SystemFonts.MessageBoxFont!, FontStyle.Bold),
-        };
-        var caption = new Label { Text = "변경 내용", AutoSize = true, Margin = new Padding(0, 10, 0, 2) };
-        var box = new TextBox { Multiline = true, ReadOnly = true, ScrollBars = ScrollBars.Vertical, Width = 480, Height = 260, Text = notes };
         var buttons = new FlowLayoutPanel { AutoSize = true, FlowDirection = FlowDirection.LeftToRight, Margin = new Padding(0, 10, 0, 0) };
         buttons.Controls.AddRange(new Control[] { _update, _later, _skip });
 
         var root = new FlowLayoutPanel { AutoSize = true, FlowDirection = FlowDirection.TopDown, WrapContents = false, Dock = DockStyle.Fill };
-        root.Controls.AddRange(new Control[] { title, caption, box, _bar, _status, buttons });
+        root.Controls.AddRange(new Control[] { _title, _caption, _box, _bar, _status, buttons });
         Controls.Add(root);
         CancelButton = _later;
         ActiveControl = _update;   // 변경 내용 상자가 전체 선택된 채로 열리지 않게 한다
@@ -85,20 +88,41 @@ internal sealed class UpdateForm : Form
         _update.Click += async (_, _) => await onChoice(this, Choice.Update);
         _later.Click += async (_, _) => await onChoice(this, Choice.Later);
         _skip.Click += async (_, _) => await onChoice(this, Choice.Skip);
+        ApplyLanguage();
     }
 
-    public void SetBusy(bool busy, string status)
+    public void ApplyLanguage()
+    {
+        Text = L.T("Update_Title");
+        _title.Text = L.F("Update_Header", _newVersion, _currentVersion);
+        _caption.Text = L.T("Update_Notes");
+        _box.Text = ReleaseNotes.Clean(ReleaseNotes.ForLanguage(_rawNotes, L.Lang));
+        _update.Text = L.T("Update_Now");
+        _later.Text = L.T("Update_Later");
+        _skip.Text = L.T("Update_Skip");
+        ShowStatus();
+        _box.SelectionStart = 0;
+        _box.SelectionLength = 0;
+    }
+
+    /// <param name="statusKey">리소스 키 (없으면 빈 문자열).</param>
+    public void SetBusy(bool busy, string statusKey)
     {
         _update.Enabled = _later.Enabled = _skip.Enabled = !busy;
         _bar.Visible = busy;
-        _status.Text = status;
+        _statusKey = statusKey;
+        ShowStatus();
     }
 
     public void SetProgress(int percent)
     {
         _bar.Value = Math.Clamp(percent, 0, 100);
-        _status.Text = $"내려받는 중… {percent}%";
+        _percent = percent;
+        _statusKey = "Update_Progress";
+        ShowStatus();
     }
+
+    private void ShowStatus() => _status.Text = _statusKey.Length == 0 ? "" : _statusKey == "Update_Progress" ? L.F(_statusKey, _percent) : L.T(_statusKey);
 }
 
 /// <summary>업데이트 확인 흐름: 확인 → (건너뛴 버전 판단) → 창 → 내려받기 → 정리 후 적용·재시작.</summary>
@@ -119,11 +143,14 @@ internal sealed class UpdateController
 
     public bool IsInstalled => _service.IsInstalled;
 
+    /// <summary>열려 있는 업데이트 창의 언어를 바꾼다.</summary>
+    public void ApplyLanguage() { if (_form is { IsDisposed: false }) _form.ApplyLanguage(); }
+
     public async Task CheckAsync(bool manual)
     {
         if (!_service.IsInstalled)
         {
-            if (manual) MessageBox.Show("개발 실행에서는 업데이트를 확인하지 않습니다.", "PhoneEdge", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            if (manual) MessageBox.Show(L.T("Update_DevRun"), "PhoneEdge", MessageBoxButtons.OK, MessageBoxIcon.Information);
             return;
         }
         if (_checking || _form is { IsDisposed: false })
@@ -138,14 +165,14 @@ internal sealed class UpdateController
             if (info == null)
             {
                 Logger.Info("업데이트 없음");
-                if (manual) MessageBox.Show($"최신 버전입니다 (v{AppInfo.Version}).", "PhoneEdge", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                if (manual) MessageBox.Show(L.F("Update_UpToDate", AppInfo.Version), "PhoneEdge", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
             string version = info.TargetFullRelease.Version.ToString();
             if (!UpdatePolicy.ShouldOffer(AppInfo.Version, version, _settings.SkippedVersion, manual))
             {
                 Logger.Info($"업데이트 {version}: 표시하지 않음 (건너뛴 버전이거나 현재보다 낮음)");
-                if (manual) MessageBox.Show($"최신 버전입니다 (v{AppInfo.Version}).", "PhoneEdge", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                if (manual) MessageBox.Show(L.F("Update_UpToDate", AppInfo.Version), "PhoneEdge", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
             Logger.Info($"새 버전 {version} 발견");
@@ -154,15 +181,14 @@ internal sealed class UpdateController
         catch (Exception ex)
         {
             Logger.Info("업데이트 확인 실패: " + ex.Message);
-            if (manual) MessageBox.Show("업데이트를 확인하지 못했습니다.\n" + ex.Message, "PhoneEdge", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            if (manual) MessageBox.Show(L.F("Update_CheckFailed", ex.Message), "PhoneEdge", MessageBoxButtons.OK, MessageBoxIcon.Warning);
         }
         finally { _checking = false; }
     }
 
     private void Show(UpdateInfo info, string version)
     {
-        string notes = ReleaseNotes.Clean(info.TargetFullRelease.NotesMarkdown);
-        _form = new UpdateForm(version, AppInfo.Version, notes, async (form, choice) =>
+                _form = new UpdateForm(version, AppInfo.Version, info.TargetFullRelease.NotesMarkdown, async (form, choice) =>
         {
             switch (choice)
             {
@@ -185,7 +211,7 @@ internal sealed class UpdateController
 
     private async Task ApplyAsync(UpdateForm form, UpdateInfo info)
     {
-        form.SetBusy(true, "내려받는 중…");
+        form.SetBusy(true, "Update_Downloading");
         try
         {
             await _service.DownloadAsync(info, p => { if (!form.IsDisposed) form.BeginInvoke(() => form.SetProgress(p)); });
@@ -194,11 +220,11 @@ internal sealed class UpdateController
         {
             Logger.Info("업데이트 내려받기 실패: " + ex.Message);
             form.SetBusy(false, "");
-            MessageBox.Show(form, "업데이트를 내려받지 못했습니다. 현재 버전으로 계속 동작합니다.\n" + ex.Message, "PhoneEdge", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            MessageBox.Show(form, L.F("Update_DownloadFailed", ex.Message), "PhoneEdge", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             return;
         }
 
-        form.SetBusy(true, "적용하는 중… 앱이 곧 다시 시작됩니다.");
+        form.SetBusy(true, "Update_Applying");
         _shutdown();   // 폰 모드 해제, 입력 훅 해제, 폰 연결 정리를 끝낸 뒤에 재시작한다
         try
         {
@@ -207,7 +233,7 @@ internal sealed class UpdateController
         catch (Exception ex)
         {
             Logger.Info("업데이트 적용 실패: " + ex.Message);
-            MessageBox.Show("업데이트를 적용하지 못했습니다. PhoneEdge를 다시 실행해 주세요.\n" + ex.Message, "PhoneEdge", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            MessageBox.Show(L.F("Update_ApplyFailed", ex.Message), "PhoneEdge", MessageBoxButtons.OK, MessageBoxIcon.Error);
             Environment.Exit(1);
         }
     }

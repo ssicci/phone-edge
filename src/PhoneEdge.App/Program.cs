@@ -17,6 +17,7 @@ internal static class Program
         if (args.Length == 2 && args[0] == "--make-ico") { TrayIcons.WriteIco(args[1], Core.TrayIconKind.Ready); return; }
         if (args.Length == 2 && args[0] == "--make-docs") { DocImages.Generate(args[1]); return; }
 
+        Core.L.SetLanguage(new Core.SettingsStore(AppInfo.SettingsPath).Language);   // 시작 실패 메시지도 선택한 언어로
         using var mutex = new Mutex(true, @"Local\PhoneEdge.SingleInstance", out bool first);
         if (!first) return;
 
@@ -35,7 +36,7 @@ internal static class Program
         catch (Exception ex)
         {
             Logger.Info("시작 실패: " + ex.Message);
-            MessageBox.Show(ex.Message, "PhoneEdge", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            MessageBox.Show(Core.L.F("Start_Failed", ex.Message), "PhoneEdge", MessageBoxButtons.OK, MessageBoxIcon.Error);
             return;
         }
 

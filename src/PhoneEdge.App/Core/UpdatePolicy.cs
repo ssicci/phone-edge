@@ -52,9 +52,26 @@ public static class ReleaseNotes
 {
     public const int MaxLength = 6000;
 
-    public static string Clean(string? markdown)
+    /// <summary>
+    /// 영문 → 가로줄(---) → 한글 순서로 병기된 노트에서 지정한 언어 쪽만 꺼낸다.
+    /// 앞쪽에 한글이 없고 뒤쪽에 한글이 있을 때만 병기로 보고, 그렇지 않은 노트(구분이 없거나 한 언어뿐)는 그대로 돌려준다.
+    /// </summary>
+    public static string ForLanguage(string? markdown, string lang)
     {
-        if (string.IsNullOrWhiteSpace(markdown)) return "(변경 내용이 기록되지 않았습니다.)";
+        if (string.IsNullOrWhiteSpace(markdown)) return markdown ?? "";
+        string s = markdown.Replace("\r\n", "\n").Replace('\r', '\n');
+        var m = Regex.Match(s, @"^[ \t]*---+[ \t]*$", RegexOptions.Multiline);
+        if (!m.Success) return markdown;
+        string first = s[..m.Index], second = s[(m.Index + m.Length)..];
+        if (HasHangul(first) || !HasHangul(second)) return markdown;
+        return (lang == Language.Korean ? second : first).Trim();
+    }
+
+    private static bool HasHangul(string text) => text.Any(c => c is >= '\uAC00' and <= '\uD7A3');
+
+    public static string Clean(string? markdown, System.Globalization.CultureInfo? culture = null)
+    {
+        if (string.IsNullOrWhiteSpace(markdown)) return L.T("Update_NoNotes", culture);
         string s = markdown.Replace("\r\n", "\n").Replace('\r', '\n');
         s = Regex.Replace(s, @"<!--.*?-->", "", RegexOptions.Singleline);
         var lines = new List<string>();
@@ -78,7 +95,12 @@ public static class ReleaseNotes
 /// <summary>%LocalAppData%\PhoneEdge\settings.json. 지금은 건너뛴 버전 하나만 저장한다.</summary>
 public sealed class SettingsStore
 {
-    private sealed class Data { public string? SkippedVersion { get; set; } }
+    private sealed class Data
+    {
+        public string? SkippedVersion { get; set; }
+        /// <summary>"auto"(기본), "ko", "en".</summary>
+        public string? Language { get; set; }
+    }
 
     private readonly string _path;
     public SettingsStore(string path) => _path = path;
@@ -86,7 +108,13 @@ public sealed class SettingsStore
     public string? SkippedVersion
     {
         get => Read().SkippedVersion;
-        set => Write(new Data { SkippedVersion = value });
+        set { var d = Read(); d.SkippedVersion = value; Write(d); }
+    }
+
+    public string Language
+    {
+        get => Core.Language.Normalize(Read().Language);
+        set { var d = Read(); d.Language = Core.Language.Normalize(value); Write(d); }
     }
 
     private Data Read()

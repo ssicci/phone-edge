@@ -3,6 +3,7 @@ using Xunit;
 
 namespace PhoneEdge.App.Tests;
 
+[Collection("UiLanguage")]
 public class GuideFormTests
 {
     /// <summary>안내 창은 모달이 아닌 Show() 로 열리므로, 닫기 버튼이 직접 창을 닫아야 한다.</summary>
@@ -19,7 +20,7 @@ public class GuideFormTests
                 form.FormClosed += (_, _) => closed = true;
                 form.Show();
                 Application.DoEvents();
-                var close = Find(form, "닫기") ?? throw new InvalidOperationException("닫기 버튼 없음");
+                var close = Find(form, PhoneEdge.App.Core.L.T("Common_Close")) ?? throw new InvalidOperationException("close button not found");
                 close.PerformClick();
                 Application.DoEvents();
             }

@@ -1,7 +1,19 @@
 # Changelog / 변경 내용
 
-Each version has a `## [X.Y.Z] - date` entry: the English notes first, then a `---` line and the Korean notes. The app's update window and the GitHub release notes show the entry as written, because the app UI is in Korean.
-버전마다 `## [X.Y.Z] - 날짜` 항목을 두고, 영문 설명 다음에 `---` 줄과 한글 설명을 씁니다. 앱 화면이 한국어이므로 업데이트 창과 GitHub 릴리스 노트에 이 내용이 그대로 나옵니다.
+Each version has a `## [X.Y.Z] - date` entry: the English notes first, then a `---` line and the Korean notes. `## [Unreleased]` collects the changes for the next release; `scripts/release.ps1 X.Y.Z` renames it to the new version and date. The app's update window (current language only) and the GitHub release notes show the entry as written (the app UI is available in Korean and English).
+버전마다 `## [X.Y.Z] - 날짜` 항목을 두고, 영문 설명 다음에 `---` 줄과 한글 설명을 씁니다. `## [Unreleased]`에는 다음 릴리스의 변경 내용을 모아 두고, `scripts/release.ps1 X.Y.Z`가 이를 새 버전과 날짜로 바꿉니다. 업데이트 창에는 현재 언어 부분만, GitHub 릴리스 노트에는 이 내용이 그대로 나옵니다.
+
+## [Unreleased]
+
+### Added
+- The app can now be shown in English or Korean. It follows the Windows display language by default (Korean for Korean Windows, English otherwise), and the tray menu has a "언어 / Language" submenu (Auto / 한국어 / English) to choose. The choice is saved and applies immediately to the tray menu, tooltip and open windows.
+- The update window shows the release notes in the current language only.
+
+---
+
+### 추가
+- 앱 화면을 영어 또는 한국어로 표시할 수 있습니다. 기본값은 Windows 표시 언어를 따르고(한국어 Windows는 한국어, 그 외는 영어), 트레이 메뉴의 "언어 / Language" 하위 메뉴(자동 / 한국어 / English)에서 고를 수 있습니다. 선택은 저장되며 트레이 메뉴, 툴팁, 열려 있는 창에 바로 적용됩니다.
+- 업데이트 창은 변경 내용을 현재 언어 부분만 보여 줍니다.
 
 ## [0.1.0] - 2026-11-23
 

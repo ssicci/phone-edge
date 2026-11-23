@@ -12,6 +12,9 @@
     <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
     <RootNamespace>PhoneEdge.App</RootNamespace>
     <AssemblyName>PhoneEdge</AssemblyName>
+    <NeutralLanguage>en</NeutralLanguage>
+    <!-- 프레임워크의 언어별 위성 어셈블리는 앱이 지원하는 언어(en, ko)만 배포한다. -->
+    <SatelliteResourceLanguages>en;ko</SatelliteResourceLanguages>
     <ApplicationIcon>Assets/app.ico</ApplicationIcon>
   </PropertyGroup>
 

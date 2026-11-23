@@ -26,6 +26,8 @@ internal sealed class TrayApp : ApplicationContext
     public TrayApp(string[] args)
     {
         _ = _ui.Handle;   // UI 스레드로 옮길 수 있게 핸들을 미리 만든다
+        var settings = new SettingsStore(AppInfo.SettingsPath);
+        L.SetLanguage(settings.Language);
 
         _link = PhoneLinkFactory.Create(args, Logger.Info);   // 조립 지점은 PhoneLinkFactory 한 곳
         var screen = new Win32Screen();
@@ -35,10 +37,26 @@ internal sealed class TrayApp : ApplicationContext
         _link.ExitRequested += y => PostUi(() => _controller.OnExitRequested(y));
         _link.DiagnosisChanged += d => PostUi(() => { Logger.Info($"진단 → {d.Problem} / {d.Warnings}"); OnLinkChanged(); });
 
-        var settings = new SettingsStore(Path.Combine(Path.GetDirectoryName(Logger.FilePath)!, "settings.json"));
         _updates = new UpdateController(new UpdateService(), settings, Shutdown);
-        var trayMenu = new TrayMenu($"PhoneEdge v{AppInfo.Version}", _updates.IsInstalled,
-            () => _ = _updates.CheckAsync(manual: true), () => ShowGuide(), () => SetPaused(!_paused), ExitApp);
+        TrayMenu? trayMenu = null;
+        trayMenu = new TrayMenu($"PhoneEdge v{AppInfo.Version}", _updates.IsInstalled, settings.Language,
+            () => _ = _updates.CheckAsync(manual: true), () => ShowGuide(), () => SetPaused(!_paused),
+            setting =>
+            {
+                settings.Language = setting;
+                trayMenu!.SetLanguageChecked(setting);
+                L.SetLanguage(setting);
+            },
+            ExitApp);
+        // 언어가 바뀌면 메뉴, 툴팁, 열려 있는 창이 바로 바뀐다.
+        L.Changed += () =>
+        {
+            Logger.Info("언어 → " + L.Lang);
+            trayMenu!.ApplyLanguage();
+            RefreshTray();
+            _guide?.ApplyLanguage();
+            _updates.ApplyLanguage();
+        };
         _pauseItem = trayMenu.Pause;
         _guideItem = trayMenu.Guide;
         _checkUpdateItem = trayMenu.CheckUpdate;
@@ -75,19 +93,19 @@ internal sealed class TrayApp : ApplicationContext
 
     private static void AddFakeMenu(TrayMenu menu, FakePhoneLink fake)
     {
-        var dev = new ToolStripMenuItem("(개발) 문제 흉내");
-        dev.DropDownItems.Add("정상", null, (_, _) => fake.SetDiagnosis(PhoneLinkProblem.None, fake.Diagnosis.Warnings));
+        var dev = new ToolStripMenuItem("(dev) Simulate problem");
+        dev.DropDownItems.Add("Healthy", null, (_, _) => fake.SetDiagnosis(PhoneLinkProblem.None, fake.Diagnosis.Warnings));
         foreach (var p in Enum.GetValues<PhoneLinkProblem>().Where(p => p != PhoneLinkProblem.None))
         {
             var problem = p;
             dev.DropDownItems.Add(problem.ToString(), null, (_, _) => fake.SetDiagnosis(problem, fake.Diagnosis.Warnings));
         }
         dev.DropDownItems.Add(new ToolStripSeparator());
-        dev.DropDownItems.Add("경고: 포인터 가속 켜기", null, (_, _) =>
+        dev.DropDownItems.Add("Warning: pointer acceleration on", null, (_, _) =>
             fake.SetDiagnosis(fake.Diagnosis.Problem, fake.Diagnosis.Warnings | PhoneLinkWarnings.PointerAcceleration));
-        dev.DropDownItems.Add("경고 없음", null, (_, _) => fake.SetDiagnosis(fake.Diagnosis.Problem, PhoneLinkWarnings.None));
+        dev.DropDownItems.Add("No warnings", null, (_, _) => fake.SetDiagnosis(fake.Diagnosis.Problem, PhoneLinkWarnings.None));
         dev.DropDownItems.Add(new ToolStripSeparator());
-        dev.DropDownItems.Add("연결 끊기 (진단 없이)", null, (_, _) => fake.SetConnected(false));
+        dev.DropDownItems.Add("Disconnect (no diagnosis)", null, (_, _) => fake.SetConnected(false));
         menu.InsertBeforeExit(dev);
     }
 
@@ -164,7 +182,7 @@ internal sealed class TrayApp : ApplicationContext
         _paused = paused;
         _pauseItem.Checked = paused;
         _controller.Enabled = !paused;
-        Logger.Info(paused ? "일시 정지" : "재개");
+        Logger.Info(paused ? "paused" : "resumed");
         RefreshTray();
     }
 

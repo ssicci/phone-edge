@@ -12,16 +12,21 @@ namespace PhoneEdge.App;
 /// </summary>
 internal static class DocImages
 {
+    /// <summary>언어마다 하위 폴더(en, ko)에 같은 이름의 이미지를 만든다.</summary>
     public static void Generate(string dir)
     {
-        Directory.CreateDirectory(dir);
         ApplicationConfiguration.Initialize();
-
-        TrayIconSheet(Path.Combine(dir, "tray-icons.png"));
-        TrayMenuImage(Path.Combine(dir, "tray-menu.png"));
-        GuideImage(Path.Combine(dir, "guide-debugging-off.png"), PhoneLinkProblem.DebuggingOff, PhoneLinkWarnings.None);
-        GuideImage(Path.Combine(dir, "guide-unauthorized.png"), PhoneLinkProblem.Unauthorized, PhoneLinkWarnings.PointerAcceleration);
-        UpdateImage(Path.Combine(dir, "update-window.png"));
+        foreach (var lang in new[] { Language.English, Language.Korean })
+        {
+            L.SetLanguage(lang);
+            string d = Path.Combine(dir, lang);
+            Directory.CreateDirectory(d);
+            TrayIconSheet(Path.Combine(d, "tray-icons.png"), lang);
+            TrayMenuImage(Path.Combine(d, "tray-menu.png"));
+            GuideImage(Path.Combine(d, "guide-debugging-off.png"), PhoneLinkProblem.DebuggingOff, PhoneLinkWarnings.None);
+            GuideImage(Path.Combine(d, "guide-unauthorized.png"), PhoneLinkProblem.Unauthorized, PhoneLinkWarnings.PointerAcceleration);
+            UpdateImage(Path.Combine(d, "update-window.png"));
+        }
     }
 
     private static void Save(Bitmap bmp, string path)
@@ -29,7 +34,7 @@ internal static class DocImages
         bmp.Save(path, ImageFormat.Png);
         long kb = new FileInfo(path).Length / 1024;
         Console.WriteLine($"{path} ({bmp.Width}x{bmp.Height}, {kb} KB)");
-        if (kb > 200) Console.WriteLine("  경고: 200KB 를 넘었습니다.");
+        if (kb > 200) Console.WriteLine("  warning: over 200 KB");
     }
 
     /// <summary>폼 전체(제목 표시줄 포함)를 그린다. 숨겨진 창이 아니라 화면에 잠깐 떠야 제목 줄까지 그려진다.</summary>
@@ -70,13 +75,13 @@ internal static class DocImages
 
     private static void UpdateImage(string path)
     {
-        var form = new UpdateForm("0.2.0", "0.1.0", ReleaseNotes.Clean(SampleNotes), (_, _) => Task.CompletedTask);
+        var form = new UpdateForm("0.2.0", "0.1.0", SampleNotes, (_, _) => Task.CompletedTask);
         CaptureForm(form, path);
     }
 
     private static void TrayMenuImage(string path)
     {
-        var menu = new TrayMenu("PhoneEdge v0.1.0", installed: true, () => { }, () => { }, () => { }, () => { });
+        var menu = new TrayMenu("PhoneEdge v0.1.0", installed: true, Language.Auto, () => { }, () => { }, () => { }, _ => { }, () => { });
         menu.Guide.Enabled = true;
         var strip = menu.Strip;
         strip.CreateControl();
@@ -96,16 +101,18 @@ internal static class DocImages
         strip.Dispose();
     }
 
-    private static void TrayIconSheet(string path)
+    private static void TrayIconSheet(string path, string lang)
     {
         var kinds = new[] { TrayIconKind.Disconnected, TrayIconKind.Ready, TrayIconKind.Phone, TrayIconKind.Paused, TrayIconKind.Problem };
-        var labels = new[] { "Not connected", "Ready", "Phone mode", "Paused", "Problem" };
+        var labels = lang == Language.Korean
+            ? new[] { "연결 안 됨", "준비됨", "폰 모드", "일시 정지", "문제 있음" }
+            : new[] { "Not connected", "Ready", "Phone mode", "Paused", "Problem" };
         const int cellW = 150, cellH = 120;
         using var bmp = new Bitmap(cellW * kinds.Length, cellH * 2);
         using var g = Graphics.FromImage(bmp);
         g.SmoothingMode = SmoothingMode.AntiAlias;
         g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.ClearTypeGridFit;
-        using var font = new Font("Segoe UI", 10f);
+        using var font = new Font(lang == Language.Korean ? "Malgun Gothic" : "Segoe UI", 10f);
         foreach (var (bg, fg, row) in new[] { (Color.White, Color.FromArgb(0x20, 0x20, 0x20), 0), (Color.FromArgb(0x20, 0x20, 0x20), Color.White, 1) })
         {
             using (var b = new SolidBrush(bg)) g.FillRectangle(b, 0, row * cellH, bmp.Width, cellH);

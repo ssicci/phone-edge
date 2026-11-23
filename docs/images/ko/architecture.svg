@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 300" width="800" height="300" role="img" aria-labelledby="t d">
+  <title id="t">PhoneEdge 구조</title>
+  <desc id="d">노트북의 PhoneEdge가 마우스·키보드 입력을 가로채 USB로 adb를 거쳐 폰의 scrcpy 서버에 보내면, 서버가 UHID로 가상 마우스와 키보드를 만듭니다.</desc>
+  <style>
+    text { font-family:-apple-system,"Segoe UI","Malgun Gothic","Apple SD Gothic Neo","Noto Sans KR",Helvetica,Arial,sans-serif; }
+    :root { --bg:#ffffff; --fg:#1f2328; --muted:#59636e; --box:#eaf1fb; --boxline:#9db4d3; --phone:#eaf7ee; --phoneline:#9bc9a6; --line:#6e7681; --accent:#1e88e5; }
+    @media (prefers-color-scheme: dark) {
+      :root { --bg:#0d1117; --fg:#e6edf3; --muted:#9aa4af; --box:#1c2a3d; --boxline:#3d5a80; --phone:#17301f; --phoneline:#2f6b3d; --line:#8b949e; --accent:#58a6ff; }
+    }
+    .bg { fill:var(--bg); }
+    text { font-family:-apple-system,"Segoe UI",Helvetica,Arial,sans-serif; fill:var(--fg); font-size:14px; }
+    .h { font-size:13px; font-weight:600; fill:var(--muted); letter-spacing:.04em; }
+    .name { font-size:15px; font-weight:600; }
+    .sub { font-size:12px; fill:var(--muted); }
+    .pc { fill:var(--box); stroke:var(--boxline); stroke-width:1.5; }
+    .ph { fill:var(--phone); stroke:var(--phoneline); stroke-width:1.5; }
+    .zone { fill:none; stroke:var(--line); stroke-width:1.5; stroke-dasharray:6 5; }
+    .arrow { stroke:var(--accent); stroke-width:2.5; fill:none; }
+    .lbl { font-size:12px; fill:var(--accent); font-weight:600; }
+  </style>
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--accent)"/></marker>
+  </defs>
+  <rect class="bg" width="800" height="300"/>
+
+  <rect class="zone" x="10" y="30" width="420" height="250" rx="12"/>
+  <text class="h" x="24" y="52">WINDOWS 노트북</text>
+  <rect class="zone" x="470" y="30" width="320" height="250" rx="12"/>
+  <text class="h" x="484" y="52">안드로이드 폰</text>
+
+  <rect class="pc" x="26" y="82" width="180" height="82" rx="8"/>
+  <text class="name" x="116" y="115" text-anchor="middle">PhoneEdge 앱</text>
+  <text class="sub" x="116" y="136" text-anchor="middle">입력 훅 + Raw Input,</text>
+  <text class="sub" x="116" y="152" text-anchor="middle">경계 감지</text>
+
+  <rect class="pc" x="240" y="82" width="176" height="82" rx="8"/>
+  <text class="name" x="328" y="115" text-anchor="middle">adb</text>
+  <text class="sub" x="328" y="136" text-anchor="middle">USB 디버깅 연결</text>
+  <text class="sub" x="328" y="152" text-anchor="middle">(앱에 포함)</text>
+
+  <rect class="ph" x="486" y="82" width="288" height="68" rx="8"/>
+  <text class="name" x="630" y="112" text-anchor="middle">scrcpy server</text>
+  <text class="sub" x="630" y="132" text-anchor="middle">제어 프로토콜만 사용 (화면 미러링 없음)</text>
+
+  <rect class="ph" x="486" y="190" width="288" height="68" rx="8"/>
+  <text class="name" x="630" y="220" text-anchor="middle">가상 마우스 + 키보드</text>
+  <text class="sub" x="630" y="240" text-anchor="middle">UHID로 생성 — 안드로이드는 실제 장치로 인식</text>
+
+  <path class="arrow" d="M206 123 H238" marker-end="url(#a)"/>
+  <path class="arrow" d="M416 123 H484" marker-end="url(#a)"/>
+  <path class="arrow" d="M630 150 V188" marker-end="url(#a)"/>
+  <text class="lbl" x="450" y="108" text-anchor="middle">USB</text>
+
+  <text class="sub" x="630" y="273" text-anchor="middle">폰에는 앱을 설치하지 않습니다.</text>
+</svg>
