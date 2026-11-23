@@ -3,7 +3,7 @@
 Each version has a `## [X.Y.Z] - date` entry: the English notes first, then a `---` line and the Korean notes. `## [Unreleased]` collects the changes for the next release; `scripts/release.ps1 X.Y.Z` renames it to the new version and date. The app's update window (current language only) and the GitHub release notes show the entry as written (the app UI is available in Korean and English).
 버전마다 `## [X.Y.Z] - 날짜` 항목을 두고, 영문 설명 다음에 `---` 줄과 한글 설명을 씁니다. `## [Unreleased]`에는 다음 릴리스의 변경 내용을 모아 두고, `scripts/release.ps1 X.Y.Z`가 이를 새 버전과 날짜로 바꿉니다. 업데이트 창에는 현재 언어 부분만, GitHub 릴리스 노트에는 이 내용이 그대로 나옵니다.
 
-## [Unreleased]
+## [0.2.0] - 2026-11-23
 
 ### Added
 - The app can now be shown in English or Korean. It follows the Windows display language by default (Korean for Korean Windows, English otherwise), and the tray menu has a "언어 / Language" submenu (Auto / 한국어 / English) to choose. The choice is saved and applies immediately to the tray menu, tooltip and open windows.
