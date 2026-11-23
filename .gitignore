@@ -1,0 +1,15 @@
+# 빌드 산출물
+bin/
+obj/
+*.user
+.vs/
+TestResults/
+
+# 외부 도구 바이너리: 저장소에 넣지 않고 빌드 때 공식 출처에서 받는다 (tools/VERSIONS.txt 참고)
+tools/platform-tools/
+tools/scrcpy-server
+tools/dl/
+
+# 패키징 산출물
+Releases/
+publish/
