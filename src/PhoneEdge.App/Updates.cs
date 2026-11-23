@@ -72,7 +72,7 @@ internal sealed class UpdateForm : Form
             Font = new Font(SystemFonts.MessageBoxFont!, FontStyle.Bold),
         };
         var caption = new Label { Text = "변경 내용", AutoSize = true, Margin = new Padding(0, 10, 0, 2) };
-        var box = new TextBox { Multiline = true, ReadOnly = true, ScrollBars = ScrollBars.Vertical, Width = 480, Height = 180, Text = notes };
+        var box = new TextBox { Multiline = true, ReadOnly = true, ScrollBars = ScrollBars.Vertical, Width = 480, Height = 260, Text = notes };
         var buttons = new FlowLayoutPanel { AutoSize = true, FlowDirection = FlowDirection.LeftToRight, Margin = new Padding(0, 10, 0, 0) };
         buttons.Controls.AddRange(new Control[] { _update, _later, _skip });
 
@@ -80,6 +80,7 @@ internal sealed class UpdateForm : Form
         root.Controls.AddRange(new Control[] { title, caption, box, _bar, _status, buttons });
         Controls.Add(root);
         CancelButton = _later;
+        ActiveControl = _update;   // 변경 내용 상자가 전체 선택된 채로 열리지 않게 한다
 
         _update.Click += async (_, _) => await onChoice(this, Choice.Update);
         _later.Click += async (_, _) => await onChoice(this, Choice.Later);

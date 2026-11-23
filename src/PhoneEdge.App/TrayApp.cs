@@ -35,22 +35,15 @@ internal sealed class TrayApp : ApplicationContext
         _link.ExitRequested += y => PostUi(() => _controller.OnExitRequested(y));
         _link.DiagnosisChanged += d => PostUi(() => { Logger.Info($"진단 → {d.Problem} / {d.Warnings}"); OnLinkChanged(); });
 
-        _pauseItem = new ToolStripMenuItem("일시 정지", null, (_, _) => SetPaused(!_paused));
-        _guideItem = new ToolStripMenuItem("연결 문제 해결…", null, (_, _) => ShowGuide()) { Enabled = false };
         var settings = new SettingsStore(Path.Combine(Path.GetDirectoryName(Logger.FilePath)!, "settings.json"));
         _updates = new UpdateController(new UpdateService(), settings, Shutdown);
-        _checkUpdateItem = new ToolStripMenuItem("업데이트 확인", null, (_, _) => _ = _updates.CheckAsync(manual: true)) { Enabled = _updates.IsInstalled };
-        var versionItem = new ToolStripMenuItem($"PhoneEdge v{AppInfo.Version}" + (_updates.IsInstalled ? "" : " (개발 실행)")) { Enabled = false };
-        var menu = new ContextMenuStrip();
-        menu.Items.Add(versionItem);
-        menu.Items.Add(_checkUpdateItem);
-        menu.Items.Add(new ToolStripSeparator());
-        menu.Items.Add(_guideItem);
-        menu.Items.Add(_pauseItem);
-        if (_link is FakePhoneLink fake) AddFakeMenu(menu, fake);
-        menu.Items.Add(new ToolStripSeparator());
-        menu.Items.Add(new ToolStripMenuItem("종료", null, (_, _) => ExitApp()));
-        _tray.ContextMenuStrip = menu;
+        var trayMenu = new TrayMenu($"PhoneEdge v{AppInfo.Version}", _updates.IsInstalled,
+            () => _ = _updates.CheckAsync(manual: true), () => ShowGuide(), () => SetPaused(!_paused), ExitApp);
+        _pauseItem = trayMenu.Pause;
+        _guideItem = trayMenu.Guide;
+        _checkUpdateItem = trayMenu.CheckUpdate;
+        if (_link is FakePhoneLink fake) AddFakeMenu(trayMenu, fake);
+        _tray.ContextMenuStrip = trayMenu.Strip;
         if (_toast != null)
             _toast.Activated += arg => PostUi(() =>
             {
@@ -80,7 +73,7 @@ internal sealed class TrayApp : ApplicationContext
         _ = StartLinkAsync();
     }
 
-    private static void AddFakeMenu(ContextMenuStrip menu, FakePhoneLink fake)
+    private static void AddFakeMenu(TrayMenu menu, FakePhoneLink fake)
     {
         var dev = new ToolStripMenuItem("(개발) 문제 흉내");
         dev.DropDownItems.Add("정상", null, (_, _) => fake.SetDiagnosis(PhoneLinkProblem.None, fake.Diagnosis.Warnings));
@@ -95,7 +88,7 @@ internal sealed class TrayApp : ApplicationContext
         dev.DropDownItems.Add("경고 없음", null, (_, _) => fake.SetDiagnosis(fake.Diagnosis.Problem, PhoneLinkWarnings.None));
         dev.DropDownItems.Add(new ToolStripSeparator());
         dev.DropDownItems.Add("연결 끊기 (진단 없이)", null, (_, _) => fake.SetConnected(false));
-        menu.Items.Add(dev);
+        menu.InsertBeforeExit(dev);
     }
 
     private async Task StartLinkAsync()

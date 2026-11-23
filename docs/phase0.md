@@ -1,24 +1,26 @@
-# 0단계 검증 결과 (2026-11-16, SM-F966N, 펼친 상태 1968×2184, 기기 보고 Android 17)
+# Phase 0 verification results (2026-11-16, SM-F966N, unfolded 1968×2184, device reports Android 17)
 
-도구: platform-tools r37.0.3 (SHA-1 일치), scrcpy-server v5.0.1 (SHA-256 일치) — `tools/VERSIONS.txt`
-재현: `dotnet run --project spike/PhoneEdge.Spike -- demo|exit|enter|curve|accel`
+Tools: platform-tools r37.0.3 (SHA-1 matched), scrcpy-server v5.0.1 (SHA-256 matched) — see `tools/versions.json`
+Reproduce: `dotnet run --project spike/PhoneEdge.Spike -- demo|exit|enter|curve|accel`
 
-| 항목 | 결과 | 근거 |
+| Item | Result | Evidence |
 |---|---|---|
-| (a) adb 인식 | 통과 | `adb devices` → `<시리얼> device` (회사 노트북) |
-| (b) 서버 + UHID | 통과 | `video=false audio=false control=true`로 서버 실행, "PhoneEdge Mouse/Keyboard" 생성(Classes: CURSOR). getevent에서 REL_X/Y, BTN_MOUSE down/up, KEY_H·E·L·L·O down/up 확인. dumpsys에서 포인터 좌표 이동 확인 |
-| (c) 커서 추적 | 통과 (조건부) | 아래 |
-| (d) 화면 크기 감지 | 구현, 접기 실측 안 함 | `dumpsys input`의 MouseCursorController viewport(displayId, logicalFrame)를 1초마다 읽음. 폴드7은 커버(display 1, 1080×2520)와 메인(display 0)이 별도 논리 디스플레이라 `dumpsys window displays`의 첫 `cur=`은 틀린 화면을 줌 |
+| (a) adb recognizes the phone | Pass | `adb devices` → `<serial> device` (laptop) |
+| (b) Server + UHID | Pass | Ran the server with `video=false audio=false control=true`; "PhoneEdge Mouse/Keyboard" were created (Classes: CURSOR). `getevent` showed REL_X/Y, BTN_MOUSE down/up, and KEY_H·E·L·L·O down/up. `dumpsys` showed the pointer coordinates moving |
+| (c) Cursor tracking | Pass (conditional) | See below |
+| (d) Screen size detection | Implemented, folding not measured | Reads the MouseCursorController viewport (displayId, logicalFrame) from `dumpsys input` every second. On the Fold7 the cover display (display 1, 1080×2520) and the main display (display 0) are separate logical displays, so the first `cur=` in `dumpsys window displays` gives the wrong screen |
 
-## (c) 선택: 구석 고정 + 클램프 모델 + 이탈 문턱 (상대 이동 UHID 마우스)
-- 진입 때 큰 음수 이동으로 좌상단 (0,0)에 붙인 뒤 y만큼 내린다. 이후 x·y를 이득×입력으로 누적하고 폰처럼 화면 끝에서 클램프한다. x=0에서 왼쪽으로 24 px 넘게 더 밀면 이탈(버튼 누른 채로는 이탈 안 함).
-- 이득: 연결 때 자동 측정(좌상단 → 600 ms 쉼 → +200 카운트 단일 리포트 → 실제 위치 읽기). 폴드7, 포인터 속도 0: **2.680 px/카운트**.
-- 가속 실측 (포인터 가속 켜짐, 기본값): 625 cnt/s 이하 2.680, 1250 → 3.18, 2500 → 4.51, 3750 → 6.49 (2 ms·8 ms 주기 모두 같은 곡선).
-- 가속 끔: 1000~37500 cnt/s 전 구간 **2.680 고정** → 선형 모델이 정확함.
-- 이탈 실측: 오른쪽 400 카운트 → 왼쪽 410 카운트에서 ExitRequested (이론 409).
-- 진입 y: 가속 켜짐에서 구석 이동 직후 세로 이동이 튐(0.2 → 1957 px). 두 이동 사이 60 ms 쉬면 오차 ≤1 px (437/1091/1747 기대 437/1092/1746).
-- 탈락: 절대좌표 HID(디지타이저는 스타일러스 의미라 휠·마우스 동작이 다름), 포인터 위치 상시 읽기(dumpsys 1회 0.3 s라 실시간 판정에 못 씀, 보정용으로만 사용).
+## (c) Chosen model: corner pin + clamp + exit threshold (relative-motion UHID mouse)
 
-## 폰에서 필요한 설정
-- 개발자 옵션 → USB 디버깅 켜기, 연결 시 이 PC 허용.
-- **마우스 포인터 가속 끄기** (설정의 마우스 항목. adb 키 `system/mouse_pointer_acceleration_enabled=0`으로 끔 확인 후 원래대로 복원함). 켜 두면 빠른 이동에서 모델이 최대 2.4배 뒤처져 이탈이 늦어짐.
+- On entry, a large negative move pins the cursor to the top-left corner (0,0), then it moves down by y. After that x and y are accumulated as gain × input and clamped at the screen edges like a real phone. Pushing more than 24 px further left at x=0 triggers the exit (no exit while a button is held).
+- Gain: measured automatically on connect (top-left → rest 600 ms → one +200-count report → read the real position). Fold7, pointer speed 0: **2.680 px/count**.
+- Acceleration measured (pointer acceleration on, the default): up to 625 counts/s 2.680, 1250 → 3.18, 2500 → 4.51, 3750 → 6.49 (the same curve at 2 ms and 8 ms report intervals).
+- Acceleration off: **fixed 2.680** over the whole 1000–37500 counts/s range → the linear model is accurate.
+- Exit measured: ExitRequested fired at 410 counts left after 400 counts right (theory: 409).
+- Entry y: with acceleration on, the vertical move right after the corner move jumped (0.2 → 1957 px). With a 60 ms rest between the two moves the error is ≤1 px (437/1091/1747 expected 437/1092/1746).
+- Rejected: absolute-coordinate HID (a digitizer means a stylus, so wheel and mouse behaviour differ), and reading the pointer position continuously (one `dumpsys` takes 0.3 s, too slow for real-time decisions; used only for calibration).
+
+## Phone settings needed
+
+- Developer options → turn on USB debugging, and allow this PC when asked.
+- **Turn off mouse pointer acceleration** (in the phone's mouse settings; turning it off through the adb key `system/mouse_pointer_acceleration_enabled=0` was verified and then restored). With it on, the model falls behind by up to 2.4× during fast moves and the exit is late.

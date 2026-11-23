@@ -53,6 +53,13 @@ public class UpdatePolicyTests
     }
 
     [Fact]
+    public void BilingualNotesKeepBothLanguagesAndShowHorizontalRule()
+    {
+        string text = ReleaseNotes.Clean("First release.\n\n---\n\n첫 릴리스.\n\n### 추가\n- 기능").Replace("\r\n", "\n");
+        Assert.Equal("First release.\n\n────────────────────\n\n첫 릴리스.\n\n추가\n• 기능", text);
+    }
+
+    [Fact]
     public void EmptyAndHugeNotesAreHandled()
     {
         Assert.Contains("기록되지", ReleaseNotes.Clean("  "));

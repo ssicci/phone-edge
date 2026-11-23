@@ -1,32 +1,32 @@
-# 제3자 소프트웨어 고지
+# Third-party notices
 
-PhoneEdge는 아래 소프트웨어를 함께 배포하거나 사용합니다. 전체 라이선스 문구는 설치 폴더의 `licenses\` 폴더에 있습니다.
+PhoneEdge bundles or uses the software below. The full license texts are in the `licenses\` folder of the installation.
 
-## scrcpy 서버 (Apache License 2.0)
+## scrcpy server (Apache License 2.0)
 
-폰에 입력 장치를 만드는 `scrcpy-server`를 그대로 사용합니다 (v5.0.1, 수정 없음).
+PhoneEdge uses the `scrcpy-server` that creates the input devices on the phone, unmodified (v5.0.1).
 
-- 저작권: Copyright (C) 2018 Genymobile, Copyright (C) 2018-2024 Romain Vimont
-- 출처: https://github.com/Genymobile/scrcpy
-- 라이선스: Apache License 2.0 (`licenses\scrcpy-LICENSE.txt`)
+- Copyright: Copyright (C) 2018 Genymobile, Copyright (C) 2018-2024 Romain Vimont
+- Source: https://github.com/Genymobile/scrcpy
+- License: Apache License 2.0 (`licenses\scrcpy-LICENSE.txt`)
 
 ## Android SDK Platform-Tools (adb)
 
-USB로 폰과 통신하기 위해 Google이 배포하는 `adb.exe`, `AdbWinApi.dll`, `AdbWinUsbApi.dll`을 그대로 포함합니다 (r37.0.3, 수정 없음).
+To talk to the phone over USB, PhoneEdge includes the `adb.exe`, `AdbWinApi.dll` and `AdbWinUsbApi.dll` distributed by Google, unmodified (r37.0.3).
 
-- 출처: https://developer.android.com/tools/releases/platform-tools
-- 라이선스: Android SDK 라이선스와 포함된 구성요소의 라이선스 (`licenses\platform-tools-NOTICE.txt`)
+- Source: https://developer.android.com/tools/releases/platform-tools
+- License: the Android SDK license and the licenses of the included components (`licenses\platform-tools-NOTICE.txt`)
 
 ## Velopack (MIT License)
 
-설치와 자동 업데이트에 사용합니다.
+Used for installation and automatic updates.
 
-- 출처: https://github.com/velopack/velopack
-- 라이선스: MIT
+- Source: https://github.com/velopack/velopack
+- License: MIT
 
-## .NET 런타임 (MIT License)
+## .NET runtime (MIT License)
 
-사용자 PC에 .NET이 없어도 실행되도록 .NET 8 런타임을 함께 포함합니다 (self-contained).
+The .NET 8 runtime is included (self-contained), so .NET does not have to be installed on the PC.
 
-- 출처: https://github.com/dotnet/runtime
-- 라이선스: MIT
+- Source: https://github.com/dotnet/runtime
+- License: MIT

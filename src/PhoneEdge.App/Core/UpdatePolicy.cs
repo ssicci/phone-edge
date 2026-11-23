@@ -50,7 +50,7 @@ public static class UpdatePolicy
 /// <summary>GitHub 릴리스 노트(마크다운)를 업데이트 창의 일반 텍스트로 다듬는다.</summary>
 public static class ReleaseNotes
 {
-    public const int MaxLength = 3000;
+    public const int MaxLength = 6000;
 
     public static string Clean(string? markdown)
     {
@@ -61,6 +61,7 @@ public static class ReleaseNotes
         foreach (var raw in s.Split('\n'))
         {
             string line = raw.TrimEnd();
+            if (Regex.IsMatch(line, @"^\s*(-{3,}|\*{3,}|_{3,})\s*$")) { lines.Add("────────────────────"); continue; }   // 가로줄
             line = Regex.Replace(line, @"^\s{0,3}#{1,6}\s*", "");                 // 제목 표시
             line = Regex.Replace(line, @"^(\s*)[-*+]\s+", "$1• ");                // 목록 표시
             line = Regex.Replace(line, @"\*\*(.+?)\*\*|__(.+?)__", "$1$2");        // 굵게

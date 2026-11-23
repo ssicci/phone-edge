@@ -1,54 +1,122 @@
 # PhoneEdge
 
-노트북 커서를 화면 오른쪽 끝 밖으로 밀면 USB로 연결된 안드로이드 폰으로 마우스·키보드 입력이 넘어가고, 폰 커서가 폰 화면 왼쪽 끝을 넘으면 노트북으로 돌아오는 Windows 트레이 앱입니다. 폰에는 아무것도 설치하지 않습니다. (기준 기기: 갤럭시 Z 폴드7)
+Push your laptop's mouse cursor off the right edge of the screen and keep going — your mouse and keyboard now control the USB-connected Android phone next to it. Push past the phone's left edge to come back. Nothing is installed on the phone.
 
-## 설치
+![Laptop and phone: pushing the cursor past the right edge sends input to the phone; pushing past the phone's left edge returns it](docs/images/how-it-works.svg)
 
-1. [최신 릴리스](https://github.com/ssicci/phone-edge/releases/latest)에서 `PhoneEdge-win-Setup.exe`를 받아 실행합니다. 관리자 권한은 필요 없고, .NET을 따로 설치하지 않아도 됩니다.
-2. 설치가 끝나면 시작 메뉴의 PhoneEdge로 실행합니다. 트레이(작업 표시줄 오른쪽 아래)에 폰 모양 아이콘이 나타납니다.
+*Reference device: Samsung Galaxy Z Fold7. The app's windows are in Korean; this document explains them in English.*
 
-> **SmartScreen 경고**: 설치 파일에 코드 서명이 없어서 "Windows의 PC 보호" 창이 뜰 수 있습니다. "추가 정보 → 실행"을 누르면 설치됩니다.
+## How it works
 
-새 버전이 나오면 앱이 알아채서 변경 내용을 보여 줍니다. [지금 업데이트]를 누르면 내려받아 자동으로 다시 시작합니다. (시작 10초 뒤와 6시간마다 확인하며, 트레이 메뉴의 "업데이트 확인"으로 직접 확인할 수도 있습니다.)
+![PhoneEdge hooks mouse and keyboard on Windows and sends them over adb to the scrcpy server on the phone, which creates a virtual mouse and keyboard with UHID](docs/images/architecture.svg)
 
-## 폰 처음 설정
+- The app watches the mouse with Raw Input and low-level hooks. In **laptop mode** nothing changes. When the cursor is pushed past the right edge of the rightmost monitor and the phone is ready, the app switches to **phone mode**: input is no longer given to Windows and is sent to the phone instead.
+- The input travels over the USB cable using `adb` to the [scrcpy](https://github.com/Genymobile/scrcpy) server (control protocol only — no screen mirroring). The server creates a virtual mouse and keyboard with UHID, so Android treats them as real hardware.
+- The app tracks where the phone cursor is. When it leaves the phone's left edge, input returns to the laptop at the same height.
 
-1. 설정 → 휴대전화 정보 → 소프트웨어 정보 → **빌드번호**를 7번 눌러 개발자 옵션을 켭니다.
-2. 설정 → 개발자 옵션 → **USB 디버깅**을 켭니다. (켤 수 없으면 설정 → 보안 및 개인정보 보호 → 보안 위험 자동 차단을 끕니다.)
-3. 폰을 데이터 전송이 되는 USB 케이블로 연결하고, 폰에 뜨는 "USB 디버깅을 허용하시겠습니까?"에서 **이 컴퓨터에서 항상 허용**을 체크하고 허용합니다.
-4. (권장) 폰의 **포인터 가속**을 끕니다. 켜져 있으면 마우스를 빠르게 움직일 때 노트북으로 돌아오는 시점이 늦어집니다. 앱이 "폰 설정 자동으로 끄기" 버튼을 제공하고, 직접 하려면 설정 → 일반 → 마우스 및 트랙패드(기기에 따라 이름이 다를 수 있음)에서 끕니다.
+## Install
 
-연결이 안 되면 트레이 아이콘이 빨갛게 바뀌고, 원인과 해결 방법을 알림과 "연결 문제 해결…" 창으로 안내합니다.
+1. Download `PhoneEdge-win-Setup.exe` from the [latest release](https://github.com/ssicci/phone-edge/releases/latest) and run it. No administrator rights are needed, and you do not need to install .NET.
+2. Start PhoneEdge from the Start menu. A phone-shaped icon appears in the tray (bottom right of the taskbar).
 
-## 사용법
+> **SmartScreen warning:** the installer is not code-signed, so Windows may show "Windows protected your PC". Choose **More info → Run anyway**.
 
-- 폰이 준비되면(초록 체크) 노트북 커서를 가장 오른쪽 모니터의 오른쪽 끝으로 밀면 폰 모드(파란 화살표)가 됩니다.
-- 폰 화면 왼쪽 끝 밖으로 커서를 밀면 노트북으로 돌아옵니다.
-- **`Ctrl+Alt+Esc`**: 언제든 즉시 노트북으로 돌아옵니다. 폰 케이블이 빠져도 자동으로 돌아옵니다.
-- 트레이 메뉴: 일시 정지, 연결 문제 해결, 업데이트 확인, 종료.
+Requires Windows 10 (version 2004) or later, 64-bit.
 
-## 개발
+## First-time phone setup
+
+1. Open **Settings → About phone → Software information** and tap **Build number** 7 times to enable Developer options.
+2. Open **Settings → Developer options** and turn on **USB debugging**. If it cannot be turned on, go to **Settings → Security and privacy → Auto Blocker** and turn off **Block commands by USB cable** (the menu names may differ by One UI version).
+3. Connect the phone with a USB cable that can transfer data. On the phone, choose **Always allow from this computer** and tap **Allow** when asked "Allow USB debugging?".
+4. *(Recommended)* Turn off the phone's **pointer acceleration**. With it on, fast mouse movements make the return to the laptop late. The app offers a button for this (see below), or turn it off in the phone's mouse settings (for example **Settings → General management → Mouse and trackpad**; the name may differ).
+
+## Using it
+
+- When the tray icon shows the green check, the phone is ready. Push the cursor past the right edge of your rightmost monitor to enter **phone mode** (blue arrow icon).
+- Push the phone cursor past the phone's left edge to return to the laptop. The laptop cursor reappears at the same height.
+- **`Ctrl+Alt+Esc`** returns to the laptop immediately, from anywhere. Unplugging the phone also returns automatically.
+- While in phone mode, mouse movement, clicks, wheel, back/forward buttons and the keyboard (including Hangul/Hanja keys, right Alt/Ctrl and arrow keys) go to the phone.
+
+### Tray icon
+
+![Tray icon states on light and dark backgrounds: not connected, ready, phone mode, paused, problem](docs/images/tray-icons.png)
+
+| Icon | Meaning |
+|---|---|
+| Gray, minus | Not connected (no phone, or still connecting) |
+| Green check | Ready — you can cross the edge |
+| Blue arrow | Phone mode — input goes to the phone |
+| Orange bars | Paused from the menu |
+| Red exclamation | A problem is stopping the connection — see below |
+
+### Tray menu
+
+![Tray menu: version, check for updates, connection help, pause, exit](docs/images/tray-menu.png)
+
+Right-click the tray icon: the version (marked "development run" when started from a build folder), **Check for updates**, **Fix connection problem…** (enabled when there is a problem or a warning), **Pause**, and **Exit**.
+
+## Connection problems
+
+If the phone cannot connect for a few seconds, PhoneEdge shows a Windows notification with the cause (once per problem per attempt). Click it, double-click the tray icon, or use **Fix connection problem…** to open the help window. The window updates by itself as the situation changes and says "connected" once the phone is ready.
+
+![Help window: "USB debugging is off" with numbered steps and a Retry button](docs/images/guide-debugging-off.png)
+
+*"The phone shows up over USB but USB debugging is off" — the window lists the steps to fix it, and **Retry** (다시 시도) tries to connect again. "Details" (자세한 정보) shows the raw output and opens the log file.*
+
+![Help window: "This laptop has not been allowed on the phone yet", with a pointer acceleration warning and a button to turn it off](docs/images/guide-unauthorized.png)
+
+*A pointer acceleration warning can appear in the same window. **Turn off the phone setting automatically** (폰 설정 자동으로 끄기) does it for you; the manual path is shown as well.*
+
+| Problem | Cause | What to do |
+|---|---|---|
+| No device | No phone is connected, or the cable is charge-only | Replug the cable; use a data cable; try another USB port |
+| USB debugging off | The phone is visible over USB but not to adb | Enable USB debugging (see above); if it cannot be enabled, turn off Auto Blocker's USB-cable blocking; install the Samsung USB driver if it still fails |
+| Not authorized | The phone has not allowed this laptop yet | Unlock the phone and tap **Allow** (check "Always allow"); if no prompt appears, replug the cable or use **Revoke USB debugging authorizations** in Developer options and reconnect |
+| Offline | The connection is unstable | Replug the cable and unlock the phone |
+| Multiple devices | More than one Android device is connected | Connect only the phone you want to use |
+| adb failed | Another program's adb conflicts, or security software blocks it | Press Retry; close Android Studio, Smart Switch or another scrcpy; check whether security software blocks `adb.exe` |
+| Input service failed | The input service on the phone could not start | Press Retry; make sure Auto Blocker is off; restart the phone and reconnect |
+
+## Updates
+
+PhoneEdge checks GitHub for a new release 10 seconds after it starts and every 6 hours (not while you are in phone mode). You can also choose **Check for updates** in the tray menu. Only stable releases are offered, never pre-releases.
+
+![Update window: "A new version 0.2.0 is available (current 0.1.0)" with release notes in English and Korean and the buttons Update now, Later, Skip this version](docs/images/update-window.png)
+
+*Example version and notes. **Update now** (지금 업데이트) downloads the update, shows progress, then restarts the app. **Later** (나중에) closes the window. **Skip this version** (이 버전 건너뛰기) hides this version from the automatic check; **Check for updates** in the menu still shows it. The release notes are English followed by Korean.*
+
+Before restarting for an update the app leaves phone mode and releases its hooks. If the download fails, the app keeps running the current version.
+
+## Limitations
+
+- USB cable only for now (wireless is planned as a separate link). One phone at a time.
+- Tested on the Galaxy Z Fold7 only. Folding and unfolding the phone while connected has not been measured.
+- The phone is assumed to be to the **right** of the laptop. Edge crossing happens only on the rightmost monitor.
+- Phone mode uses Raw Input from a mouse. Precision touchpads may not report movement this way, so use an external mouse.
+- The installer is not code-signed (SmartScreen warning). Windows notifications need Windows 10 2004 or later.
+- The app does not replace the phone's own settings: pointer acceleration should be off for accurate returns.
+
+## Development
 
 ```powershell
-pwsh tools/fetch-tools.ps1                                   # adb, scrcpy 서버 받기 (해시 검증)
+pwsh tools/fetch-tools.ps1                                   # download adb and the scrcpy server (hashes are verified)
 dotnet build src/PhoneEdge.App/PhoneEdge.App.csproj
 dotnet test tests/PhoneEdge.App.Tests/PhoneEdge.App.Tests.csproj
-src/PhoneEdge.App/bin/Debug/net8.0-windows10.0.19041.0/PhoneEdge.exe --fake   # 폰 없이 가짜 폰으로 실행
+src/PhoneEdge.App/bin/Debug/net8.0-windows10.0.19041.0/PhoneEdge.exe --fake   # run with a fake phone, no device needed
 ```
 
-- 용어는 [CONTEXT.md](CONTEXT.md), 결정 사항과 폴더 소유권은 [CLAUDE.md](CLAUDE.md)를 봅니다.
-- 개발 실행(`bin`에서 실행)은 업데이트를 확인하지 않고 메뉴에 "(개발 실행)"으로 표시됩니다.
-- 업데이트를 로컬에서 시험하려면 설치본을 실행하기 전에 환경 변수 `PHONEEDGE_UPDATE_SOURCE`에 `vpk pack`이 만든 폴더(`Releases`)를 지정합니다 (개발자 전용).
+- Terms are in [CONTEXT.md](CONTEXT.md); decisions and folder ownership are in [CLAUDE.md](CLAUDE.md); the phone-side measurements are in [docs/phase0.md](docs/phase0.md).
+- A development run (from `bin`) does not check for updates. To test updating locally, build two versions with `vpk pack` into one folder and set the environment variable `PHONEEDGE_UPDATE_SOURCE` to that folder before starting the installed app (developers only).
+- `--fake` adds a "(개발) 문제 흉내" menu that simulates each connection problem and warning.
+- **Documentation images:** the PNGs in `docs/images/` are generated from the real app windows with `pwsh scripts/make-docs-images.ps1` (it runs `PhoneEdge.exe --make-docs`). Run it again after changing the UI. The two SVG diagrams are hand-written. The images contain only app windows and example data, never a real desktop or phone screen.
 
-## 릴리스 절차
+## Releasing
 
-1. `CHANGELOG.md`에 `## [X.Y.Z] - 날짜` 항목을 씁니다. 이 내용이 업데이트 창과 GitHub 릴리스 노트가 됩니다.
-2. `pwsh scripts/release.ps1 X.Y.Z` — `Directory.Build.props`의 버전을 올리고 CHANGELOG 항목을 확인한 뒤, 실행할 git 명령을 출력합니다 (스크립트가 git을 실행하지는 않습니다).
-3. 출력된 명령으로 커밋하고 `vX.Y.Z` 태그를 push 합니다.
-4. 태그가 push 되면 `.github/workflows/release.yml`이 도구 받기 → 테스트 → publish → 이전 릴리스 받기(델타용) → `vpk pack` → GitHub 릴리스 업로드까지 자동으로 합니다. 태그 버전이 `Directory.Build.props`나 CHANGELOG와 다르면 실패합니다.
+1. Add a `## [X.Y.Z] - date` entry to `CHANGELOG.md`: English notes, a `---` line, then the Korean notes. This text becomes the update window and the GitHub release notes.
+2. Run `pwsh scripts/release.ps1 X.Y.Z`. It bumps the version in `Directory.Build.props`, checks the changelog entry, and prints the git commands to run (it does not run git itself).
+3. Commit and push, then push the tag `vX.Y.Z`.
+4. `.github/workflows/release.yml` then fetches the tools, runs the tests, publishes, downloads the previous release (for delta updates), runs `vpk pack`, and uploads the GitHub release. It fails if the tag, `Directory.Build.props` and `CHANGELOG.md` disagree.
 
-설치된 앱은 정식 릴리스(프리릴리스 제외)만 업데이트 대상으로 봅니다.
+## Third-party software
 
-## 제3자 소프트웨어
-
-[THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md) 참고. scrcpy 서버(Apache-2.0), Android platform-tools(adb), Velopack(MIT)을 사용합니다.
+See [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md): scrcpy server (Apache-2.0), Android platform-tools (adb), Velopack (MIT), .NET runtime (MIT).

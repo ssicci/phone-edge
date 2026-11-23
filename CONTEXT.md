@@ -1,37 +1,36 @@
 # PhoneEdge
 
-노트북의 마우스·키보드를 화면 경계를 넘겨 옆에 놓인 안드로이드 폰에서 그대로 쓰게 하는 Windows 앱.
+A Windows app that lets you use the laptop's mouse and keyboard on an Android phone placed next to it, by moving the cursor across the screen edge. Korean terms in parentheses are the words used in the app UI and the code.
 
 ## Language
 
-**노트북 모드**:
-마우스·키보드 입력이 평소처럼 Windows로 가는 상태.
+**Laptop mode** (노트북 모드):
+The state where mouse and keyboard input goes to Windows as usual.
 
-**폰 모드**:
-마우스·키보드 입력을 Windows에 전달하지 않고 폰으로 보내는 상태.
-_Avoid_: 원격 모드, 제어 모드
+**Phone mode** (폰 모드):
+The state where mouse and keyboard input is not passed to Windows and is sent to the phone instead.
+_Avoid_: remote mode, control mode
 
-**경계 전환**:
-커서가 화면 경계를 넘는 것을 계기로 노트북 모드와 폰 모드가 바뀌는 것.
-_Avoid_: 스위칭, 핸드오프
+**Edge crossing** (경계 전환):
+Switching between laptop mode and phone mode because the cursor crossed a screen edge.
+_Avoid_: switching, handoff
 
-**진입 경계**:
-폰 모드로 들어갈 때 폰 커서가 나타나는 폰 화면의 가장자리로, 폰이 노트북 오른쪽에 있으면 폰 화면의 좌측 가장자리다.
+**Entry edge** (진입 경계):
+The edge of the phone screen where the phone cursor appears when phone mode starts. With the phone on the right of the laptop, it is the left edge of the phone screen.
 
-**비상 복귀**:
-단축키나 연결 끊김으로 폰 커서 위치와 무관하게 즉시 노트북 모드로 돌아오는 것.
+**Emergency return** (비상 복귀):
+Returning to laptop mode immediately, regardless of where the phone cursor is, because of the hotkey or a lost connection.
 
-**전송 통로**:
-입력을 폰까지 실어 나르는 연결 수단으로, 현재는 USB/ADB 하나이고 `IPhoneLink`의 구현 하나에 대응한다.
-_Avoid_: 커넥션, 채널
+**Link** (전송 통로):
+The connection that carries input to the phone. Today it is USB/ADB only, and it corresponds to exactly one implementation of `IPhoneLink`.
+_Avoid_: connection, channel
 
-**가상 입력 장치**:
-폰 안에 UHID로 만들어져 폰이 실제 마우스·키보드로 인식하는 장치.
+**Virtual input device** (가상 입력 장치):
+A mouse or keyboard created inside the phone with UHID, which the phone treats as real hardware.
 
 ## Relationships
 
-- **경계 전환**으로 **폰 모드**에 들어가면 폰 커서는 **진입 경계**에서 나타난다
-- 폰 커서가 **진입 경계**를 다시 넘으면 **노트북 모드**로 돌아온다
-- **전송 통로**가 끊기면 반드시 **비상 복귀**가 일어난다
-- **전송 통로** 하나가 **가상 입력 장치**(마우스, 키보드)를 만든다
-
+- An **edge crossing** into **phone mode** makes the phone cursor appear at the **entry edge**
+- When the phone cursor crosses the **entry edge** again, input returns to **laptop mode**
+- If the **link** drops, an **emergency return** always happens
+- One **link** creates the **virtual input devices** (a mouse and a keyboard)

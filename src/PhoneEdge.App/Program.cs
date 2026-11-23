@@ -12,38 +12,12 @@ internal static class Program
         // 설치·제거·업데이트 훅 처리. 뮤텍스보다 먼저, 가장 먼저 실행한다 (시작 메뉴 바로 가기는 Velopack 이 만들고 지운다).
         Velopack.VelopackApp.Build().Run();
         NativeMethods.AttachConsole(-1);   // 터미널에서 실행하면 로그가 터미널에도 나온다
+
+        // 개발용 명령. 훅·트레이·뮤텍스 없이 파일만 만들고 끝난다.
         if (args.Length == 2 && args[0] == "--make-ico") { TrayIcons.WriteIco(args[1], Core.TrayIconKind.Ready); return; }
-        if (args.Length == 2 && args[0] == "--make-png")   // 개발용: 아이콘 크기별 미리보기 PNG
-        {
-            foreach (var kind in Enum.GetValues<Core.TrayIconKind>())
-                foreach (var size in new[] { 16, 20, 24, 32 })
-                {
-                    using var b = TrayIcons.Render(kind, size);
-                    b.Save(Path.Combine(args[1], $"{kind}-{size}.png"), System.Drawing.Imaging.ImageFormat.Png);
-                }
-            return;
-        }
-        if (args.Length == 2 && args[0] == "--guide-shot")   // 개발용: 안내 창을 이미지로 저장
-        {
-            ApplicationConfiguration.Initialize();
-            var fake = new FakePhoneLink(_ => { });
-            using var form = new GuideForm(fake);
-            form.Show();
-            foreach (var (name, problem, warn) in new[] {
-                ("unauthorized", PhoneEdge.Contracts.PhoneLinkProblem.Unauthorized, PhoneEdge.Contracts.PhoneLinkWarnings.PointerAcceleration),
-                ("debuggingoff", PhoneEdge.Contracts.PhoneLinkProblem.DebuggingOff, PhoneEdge.Contracts.PhoneLinkWarnings.None),
-                ("ready", PhoneEdge.Contracts.PhoneLinkProblem.None, PhoneEdge.Contracts.PhoneLinkWarnings.None) })
-            {
-                fake.SetDiagnosis(problem, warn);
-                form.Apply(fake.State, fake.Diagnosis);
-                Application.DoEvents();
-                using var bmp = new System.Drawing.Bitmap(form.Width, form.Height);
-                form.DrawToBitmap(bmp, new System.Drawing.Rectangle(0, 0, form.Width, form.Height));
-                bmp.Save(Path.Combine(args[1], $"guide-{name}.png"));
-            }
-            return;
-        }
-        using var mutex =new Mutex(true, @"Local\PhoneEdge.SingleInstance", out bool first);
+        if (args.Length == 2 && args[0] == "--make-docs") { DocImages.Generate(args[1]); return; }
+
+        using var mutex = new Mutex(true, @"Local\PhoneEdge.SingleInstance", out bool first);
         if (!first) return;
 
         ApplicationConfiguration.Initialize();

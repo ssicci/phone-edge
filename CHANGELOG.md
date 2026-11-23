@@ -1,8 +1,22 @@
-# 변경 내용
+# Changelog / 변경 내용
 
-버전마다 `## [X.Y.Z] - 날짜` 항목을 둔다. 앱의 업데이트 창과 GitHub 릴리스 노트는 해당 버전 항목에서 뽑는다.
+Each version has a `## [X.Y.Z] - date` entry: the English notes first, then a `---` line and the Korean notes. The app's update window and the GitHub release notes show the entry as written, because the app UI is in Korean.
+버전마다 `## [X.Y.Z] - 날짜` 항목을 두고, 영문 설명 다음에 `---` 줄과 한글 설명을 씁니다. 앱 화면이 한국어이므로 업데이트 창과 GitHub 릴리스 노트에 이 내용이 그대로 나옵니다.
 
 ## [0.1.0] - 2026-11-23
+
+First release.
+
+### Added
+- Push the laptop cursor past the right edge of the screen and the mouse and keyboard move to a USB-connected Android phone (Galaxy Z Fold7 is the reference device). Push the phone cursor past the phone's left edge and they come back.
+- Keyboard: Hangul/Hanja keys, right Alt/Ctrl, arrow keys and other extended keys. Mouse: movement, clicks, wheel and back/forward buttons.
+- `Ctrl+Alt+Esc` returns to the laptop at any time, and unplugging the phone returns automatically.
+- Nothing is installed on the phone. Only USB debugging has to be turned on.
+- A tray icon shows the state (not connected, ready, phone mode, paused, problem), with Pause and Exit in its menu.
+- When the phone cannot connect, a Windows notification and a help window explain the cause and the fix, with a Retry button and an automatic fix for the phone's pointer acceleration setting.
+- Installer (no administrator rights needed) and automatic updates: when a new version is released the app shows what changed and, if you accept, downloads it and restarts.
+
+---
 
 첫 릴리스.
 

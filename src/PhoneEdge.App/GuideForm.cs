@@ -39,7 +39,7 @@ internal sealed class GuideForm : Form
         var buttons = new FlowLayoutPanel { AutoSize = true, FlowDirection = FlowDirection.LeftToRight, Margin = new Padding(0, 8, 0, 0) };
         buttons.Controls.AddRange(new Control[] { _retry, close });
 
-        var warnInner = new FlowLayoutPanel { AutoSize = true, FlowDirection = FlowDirection.TopDown, WrapContents = false };
+        var warnInner = new FlowLayoutPanel { AutoSize = true, FlowDirection = FlowDirection.TopDown, WrapContents = false, Location = new Point(8, 22) };
         warnInner.Controls.AddRange(new Control[] { _warnText, _fixAccel });
         _warnBox.Controls.Add(warnInner);
 
