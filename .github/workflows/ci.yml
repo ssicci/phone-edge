@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build-test:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      # adb 와 scrcpy 서버는 저장소에 없으므로 공식 출처에서 받아 해시를 검증한다.
+      - name: 외부 도구 받기
+        shell: pwsh
+        run: ./tools/fetch-tools.ps1
+
+      - name: 빌드
+        run: dotnet build src/PhoneEdge.App/PhoneEdge.App.csproj -c Release
+
+      - name: 앱 테스트
+        run: dotnet test tests/PhoneEdge.App.Tests/PhoneEdge.App.Tests.csproj -c Release
+
+      - name: 폰 연결 엔진 테스트
+        run: dotnet test tests/PhoneEdge.Phone.Tests/PhoneEdge.Phone.Tests.csproj -c Release

@@ -18,14 +18,16 @@
 |---|---|---|
 | `src/PhoneEdge.Contracts/` | 관리 세션 | 두 모듈 사이의 계약. 다른 세션은 수정 금지 |
 | `src/PhoneEdge.Phone/`, `tests/PhoneEdge.Phone.Tests/`, `spike/`, `tools/`, `docs/phase0.md` | 폰 연결 엔진 세션 (Opus) | ADB·scrcpy 서버·UHID, 폰 커서 추적 |
-| `src/PhoneEdge.App/`, `tests/PhoneEdge.App.Tests/` | Windows 입력 앱 세션 (Sonnet) | 훅, 경계 감지, HID 변환, 트레이 UI |
+| `src/PhoneEdge.App/`, `tests/PhoneEdge.App.Tests/` | Windows 입력 앱 세션 (Sonnet) | 훅, 경계 감지, HID 변환, 트레이 UI, 업데이트 UI |
+| `.github/`, `scripts/`, `Directory.Build.props`, `CHANGELOG.md`, `README.md`, `THIRD-PARTY-NOTICES.md`, `tools/*.ps1`, `tools/versions.json` | Windows 입력 앱 세션 (Sonnet) | 설치 패키지, 릴리스 자동화, 문서 |
 
 ## 세션 공통 규칙
 
 - 자기 소유 경로의 파일만 만들고 고친다. 다른 경로는 읽기만 한다.
 - 계약(`IPhoneLink`)을 바꿔야 하면 직접 고치지 말고, 필요한 변경과 이유를 최종 보고에 적는다.
 - `.sln` 파일을 만들지 않는다. 각자 자기 `.csproj`만 빌드·테스트한다.
-- git 초기화, 커밋, 브랜치 작업을 하지 않는다.
+- 저장소: https://github.com/ssicci/phone-edge (공개). 커밋·push·태그·릴리스는 관리 세션만 한다. 다른 세션은 파일만 고치고 git 명령으로 상태를 바꾸지 않는다 (`git status`, `git diff` 같은 조회는 괜찮다).
+- 공개 저장소이므로 폰 시리얼번호, 사용자 경로, 회사 정보를 코드·테스트·문서에 넣지 않는다.
 - 이 폴더(`phone-edge/`) 밖의 파일은 건드리지 않는다.
 - 사용자에게 보이는 문구와 보고는 한국어로 쓴다.
 - 토큰 절약: 필요한 파일만 읽고, 계획·분석 문서를 따로 만들지 않으며, 최종 보고는 15줄 이내로 한다 (된 것 / 안 된 것 / 검증 방법 / 관리 세션에 요청할 것).

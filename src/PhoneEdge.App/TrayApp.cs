@@ -17,6 +17,9 @@ internal sealed class TrayApp : ApplicationContext
     private readonly ProblemNotifier _notifier = new(TimeSpan.FromSeconds(2));
     private readonly System.Windows.Forms.Timer _notifyTimer = new() { Interval = 500 };
     private readonly WindowsToast? _toast = WindowsToast.TryCreate();
+    private readonly UpdateController _updates;
+    private readonly ToolStripMenuItem _checkUpdateItem;
+    private readonly System.Windows.Forms.Timer _updateTimer = new() { Interval = 10_000 };
     private GuideForm? _guide;
     private bool _paused, _shutdown, _problemShown;
 
@@ -34,7 +37,14 @@ internal sealed class TrayApp : ApplicationContext
 
         _pauseItem = new ToolStripMenuItem("일시 정지", null, (_, _) => SetPaused(!_paused));
         _guideItem = new ToolStripMenuItem("연결 문제 해결…", null, (_, _) => ShowGuide()) { Enabled = false };
+        var settings = new SettingsStore(Path.Combine(Path.GetDirectoryName(Logger.FilePath)!, "settings.json"));
+        _updates = new UpdateController(new UpdateService(), settings, Shutdown);
+        _checkUpdateItem = new ToolStripMenuItem("업데이트 확인", null, (_, _) => _ = _updates.CheckAsync(manual: true)) { Enabled = _updates.IsInstalled };
+        var versionItem = new ToolStripMenuItem($"PhoneEdge v{AppInfo.Version}" + (_updates.IsInstalled ? "" : " (개발 실행)")) { Enabled = false };
         var menu = new ContextMenuStrip();
+        menu.Items.Add(versionItem);
+        menu.Items.Add(_checkUpdateItem);
+        menu.Items.Add(new ToolStripSeparator());
         menu.Items.Add(_guideItem);
         menu.Items.Add(_pauseItem);
         if (_link is FakePhoneLink fake) AddFakeMenu(menu, fake);
@@ -54,6 +64,15 @@ internal sealed class TrayApp : ApplicationContext
 
         _notifyTimer.Tick += (_, _) => CheckNotify();
         _notifyTimer.Start();
+
+        // 시작 10초 뒤, 이후 6시간마다 확인한다. 폰 모드 중에는 창을 띄우지 않고 5분 뒤로 미룬다.
+        _updateTimer.Tick += (_, _) =>
+        {
+            if (_controller.Mode == InputMode.Phone) { _updateTimer.Interval = 5 * 60 * 1000; return; }
+            _updateTimer.Interval = 6 * 60 * 60 * 1000;
+            _ = _updates.CheckAsync(manual: false);
+        };
+        if (_updates.IsInstalled) _updateTimer.Start();
 
         _interceptor = new InputInterceptor(_controller, screen.RightEdgeMonitorAt);
         Logger.Info("입력 훅 설치됨. 폰 모드 비상 복귀: Ctrl+Alt+Esc. 로그: " + Logger.FilePath);
@@ -180,7 +199,7 @@ internal sealed class TrayApp : ApplicationContext
         _shutdown = true;
         try { _controller.EmergencyExit(); } catch { }
         try { _interceptor.Dispose(); } catch { }
-        try { _notifyTimer.Stop(); _cts.Cancel(); } catch { }
+        try { _notifyTimer.Stop(); _updateTimer.Stop(); _cts.Cancel(); } catch { }
         try { _link.DisposeAsync().AsTask().Wait(TimeSpan.FromSeconds(2)); } catch { }
         try { _tray.Visible = false; _tray.Dispose(); } catch { }
         Logger.Info("종료");

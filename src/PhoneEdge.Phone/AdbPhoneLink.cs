@@ -273,11 +273,21 @@ public sealed class AdbPhoneLink : IPhoneLink
 
     private async Task SupervisorLoop(CancellationToken ct)
     {
+        int adbFailures = 0;
         while (!ct.IsCancellationRequested)
         {
             try
             {
                 var verdict = await FindDeviceAsync(ct).ConfigureAwait(false);
+                // adb 서버가 재시작되는 순간(kill-server 직후 등)에는 한 번쯤 통신 실패가 난다 (실측: connection reset).
+                // 연속 실패일 때만 AdbFailed 로 알리고, 첫 실패는 짧게 쉬고 다시 본다.
+                adbFailures = verdict.Problem == PhoneLinkProblem.AdbFailed ? adbFailures + 1 : 0;
+                if (adbFailures == 1)
+                {
+                    _adb.Log("adb 통신 실패, 곧 다시 확인: " + verdict.Detail);
+                    await SleepAsync(TimeSpan.FromMilliseconds(500), ct).ConfigureAwait(false);
+                    continue;
+                }
                 if (verdict.Problem != PhoneLinkProblem.None || verdict.Serial == null)
                 {
                     if (verdict.Problem != PhoneLinkProblem.None) SetProblem(verdict.Problem, verdict.Detail);
@@ -525,11 +535,17 @@ public sealed class AdbPhoneLink : IPhoneLink
             AdbRunner.TryKill(Server);
             if (Port != 0)
             {
-                try { await adb.RunAsync(["-s", Serial, "forward", "--remove", "tcp:" + Port], TimeSpan.FromSeconds(5), CancellationToken.None).ConfigureAwait(false); }
-                catch { /* 기기가 이미 빠짐 */ }
+                // 재연결을 막지 않도록 기다리지 않는다 (adb 서버가 죽었거나 기기가 빠졌으면 수 초 걸린다)
+                string serial = Serial, port = "tcp:" + Port;
+                _ = Task.Run(async () =>
+                {
+                    try { await adb.RunAsync(["-s", serial, "forward", "--remove", port], TimeSpan.FromSeconds(5), CancellationToken.None).ConfigureAwait(false); }
+                    catch { /* 기기가 이미 빠짐 */ }
+                });
             }
             Watcher?.Dispose();
             Server?.Dispose();
+            await Task.CompletedTask.ConfigureAwait(false);
         }
     }
 

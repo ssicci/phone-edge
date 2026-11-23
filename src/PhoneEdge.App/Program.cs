@@ -9,6 +9,8 @@ internal static class Program
     [STAThread]
     private static void Main(string[] args)
     {
+        // 설치·제거·업데이트 훅 처리. 뮤텍스보다 먼저, 가장 먼저 실행한다 (시작 메뉴 바로 가기는 Velopack 이 만들고 지운다).
+        Velopack.VelopackApp.Build().Run();
         NativeMethods.AttachConsole(-1);   // 터미널에서 실행하면 로그가 터미널에도 나온다
         if (args.Length == 2 && args[0] == "--make-ico") { TrayIcons.WriteIco(args[1], Core.TrayIconKind.Ready); return; }
         if (args.Length == 2 && args[0] == "--make-png")   // 개발용: 아이콘 크기별 미리보기 PNG

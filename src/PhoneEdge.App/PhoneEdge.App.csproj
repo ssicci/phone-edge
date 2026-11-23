@@ -26,8 +26,16 @@
 
   <!-- 실행 파일 옆 tools\ 에 adb 와 scrcpy 서버를 함께 둔다. -->
   <ItemGroup>
-    <None Include="..\..\tools\platform-tools\adb.exe;..\..\tools\platform-tools\AdbWinApi.dll;..\..\tools\platform-tools\AdbWinUsbApi.dll;..\..\tools\scrcpy-server"
-          Link="tools\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\tools\platform-tools\adb.exe;..\..\tools\platform-tools\AdbWinApi.dll;..\..\tools\platform-tools\AdbWinUsbApi.dll;..\..\tools\scrcpy-server" Link="tools\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Velopack" Version="1.2.161" />
+  </ItemGroup>
+
+  <!-- 배포물에 포함할 제3자 라이선스 고지 (tools/fetch-tools.ps1 이 tools/dl/licenses 에 받는다). -->
+  <ItemGroup>
+    <None Include="..\..\tools\dl\licenses\*;..\..\THIRD-PARTY-NOTICES.md"
+          Link="licenses\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>
