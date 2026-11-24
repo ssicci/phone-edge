@@ -9,7 +9,7 @@ namespace PhoneEdge.App;
 internal static class AppInfo
 {
     /// <summary>"0.1.0" 형태. 빌드 메타데이터(+커밋)는 뗀다.</summary>
-    public static string SettingsPath => Path.Combine(Path.GetDirectoryName(Logger.FilePath)!, "settings.json");
+    public static string SettingsPath => Path.Combine(AppPaths.DataDir, "settings.json");
 
     public static readonly string Version = (Assembly.GetEntryAssembly()?
         .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion ?? "0.0.0").Split('+')[0];

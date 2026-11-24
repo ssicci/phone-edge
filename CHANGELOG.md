@@ -3,6 +3,16 @@
 Each version has a `## [X.Y.Z] - date` entry: the English notes first, then a `---` line and the Korean notes. `## [Unreleased]` collects the changes for the next release; `scripts/release.ps1 X.Y.Z` renames it to the new version and date. The app's update window (current language only) and the GitHub release notes show the entry as written (the app UI is available in Korean and English).
 버전마다 `## [X.Y.Z] - 날짜` 항목을 두고, 영문 설명 다음에 `---` 줄과 한글 설명을 씁니다. `## [Unreleased]`에는 다음 릴리스의 변경 내용을 모아 두고, `scripts/release.ps1 X.Y.Z`가 이를 새 버전과 날짜로 바꿉니다. 업데이트 창에는 현재 언어 부분만, GitHub 릴리스 노트에는 이 내용이 그대로 나옵니다.
 
+## [0.2.1] - 2026-11-24
+
+### Fixed
+- Right after an install or an update, the app could not write its log file or the Windows notification icon, so the log was empty and Windows notifications were off for that run. The app now retries for a few seconds, falls back to the TEMP folder for the log if it still cannot write, and records why it failed at the top of the log.
+
+---
+
+### 수정
+- 설치나 업데이트 직후 다시 시작된 앱이 로그 파일과 Windows 알림 아이콘을 쓰지 못해, 그 실행 동안 로그가 비고 Windows 알림이 꺼지던 문제를 고쳤습니다. 이제 몇 초 동안 다시 시도하고, 그래도 안 되면 로그를 TEMP 폴더에 쓰며, 실패 이유를 로그 맨 앞에 남깁니다.
+
 ## [0.2.0] - 2026-11-23
 
 ### Added

@@ -27,8 +27,17 @@ internal sealed class WindowsToast
         try
         {
             SetCurrentProcessExplicitAppUserModelID(Aumid);
-            var iconPath = Path.Combine(Path.GetDirectoryName(Logger.FilePath)!, "toast-icon.png");
-            using (var bmp = TrayIcons.Render(TrayIconKind.Ready, 64)) bmp.Save(iconPath, ImageFormat.Png);
+            var iconPath = Path.Combine(AppPaths.DataDir, "toast-icon.png");
+            var errors = new List<string>();
+            bool saved = Core.RetryingFile.Try(() =>
+            {
+                Directory.CreateDirectory(AppPaths.DataDir);
+                using var bmp = TrayIcons.Render(TrayIconKind.Ready, 64);
+                bmp.Save(iconPath, ImageFormat.Png);
+            }, 5, TimeSpan.FromMilliseconds(300), errors, what: iconPath);
+            foreach (var e in errors) Logger.Info("알림 아이콘 저장 실패: " + e);
+            // 이전 실행이 만든 아이콘이 있으면 그것을 쓴다. 아이콘이 없어도 알림 자체는 동작한다.
+            if (!saved && !File.Exists(iconPath)) iconPath = "";
             using (var key = Registry.CurrentUser.CreateSubKey(@"Software\Classes\AppUserModelId\" + Aumid))
             {
                 key.SetValue("DisplayName", "PhoneEdge");
