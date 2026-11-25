@@ -81,7 +81,8 @@ internal static class DocImages
 
     private static void TrayMenuImage(string path)
     {
-        var menu = new TrayMenu("PhoneEdge v0.1.0", installed: true, Language.Auto, () => { }, () => { }, () => { }, _ => { }, () => { });
+        var menu = new TrayMenu("PhoneEdge v0.2.1", installed: true, Language.Auto, () => { }, () => AutostartState.On, () => { },
+            () => { }, () => { }, () => { }, _ => { }, () => { });
         menu.Guide.Enabled = true;
         var strip = menu.Strip;
         strip.CreateControl();

@@ -113,4 +113,8 @@ Android Studio, Smart Switch, 다른 scrcpy가 켜져 있으면 종료한 뒤 �
   <data name="Update_NoNotes" xml:space="preserve"><value>(변경 내용이 기록되지 않았습니다.)</value></data>
   <data name="Start_Failed" xml:space="preserve"><value>PhoneEdge를 시작하지 못했습니다.
 {0}</value></data>
+  <data name="Menu_Autostart" xml:space="preserve"><value>Windows 시작 시 자동 실행</value></data>
+  <data name="Menu_AutostartDevNote" xml:space="preserve"><value> (설치본에서만 가능)</value></data>
+  <data name="Menu_AutostartDisabledHint" xml:space="preserve"><value>Windows 설정(앱 → 시작 프로그램)에서 꺼져 있습니다. 이 항목을 선택하면 다시 켭니다.</value></data>
+  <data name="Menu_OpenFolder" xml:space="preserve"><value>설치 폴더 열기</value></data>
 </root>

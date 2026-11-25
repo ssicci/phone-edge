@@ -25,6 +25,10 @@ Push your laptop's mouse cursor off the right edge of the screen and keep going 
 
 Requires Windows 10 (version 2004) or later, 64-bit.
 
+**Where it is installed:** `%LocalAppData%\PhoneEdge` (for example `C:\Users\<you>\AppData\Local\PhoneEdge`). No administrator rights are needed. The **Start menu** has a PhoneEdge entry, and the tray menu's **Open install folder** opens the install folder in File Explorer. The app's log and settings (`settings.json`) are in the same folder.
+
+**Uninstall:** open **Settings → Apps → Installed apps**, find PhoneEdge and choose **Uninstall**. This also removes the Start menu entry and the "Start with Windows" registration.
+
 ## First-time phone setup
 
 1. Open **Settings → About phone → Software information** and tap **Build number** 7 times to enable Developer options.
@@ -55,7 +59,13 @@ Requires Windows 10 (version 2004) or later, 64-bit.
 
 ![Tray menu: version, check for updates, connection help, pause, language, exit](docs/images/en/tray-menu.png)
 
-Right-click the tray icon: the version (marked "development run" when started from a build folder), **Check for updates**, **Fix connection problem…** (enabled when there is a problem or a warning), **Pause**, **언어 / Language**, and **Exit**.
+Right-click the tray icon: the version (marked "development run" when started from a build folder), **Open install folder**, **Check for updates**, **Fix connection problem…** (enabled when there is a problem or a warning), **Pause**, **Start with Windows**, **언어 / Language**, and **Exit**.
+
+### Start with Windows
+
+PhoneEdge does not start by itself unless you ask it to. Check **Start with Windows** in the tray menu and it starts when you sign in; uncheck it to stop. The item works only in the installed app (in a development run it is disabled and says so).
+
+It registers the installer's launcher (`%LocalAppData%\PhoneEdge\PhoneEdge.exe`) under `HKCU\Software\Microsoft\Windows\CurrentVersion\Run`, so the path stays valid after updates. If you turn PhoneEdge off in **Settings → Apps → Startup** (or Task Manager's Startup apps), the check mark disappears the next time you open the menu, and choosing the item turns it back on. Uninstalling removes the registration.
 
 ### Language
 

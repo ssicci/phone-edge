@@ -33,7 +33,7 @@ public class LiveLanguageTests
         {
             string? chosen = null;
             L.SetLanguage("en");
-            var menu = new TrayMenu("PhoneEdge v1.2.3", installed: false, Language.Auto, () => { }, () => { }, () => { }, s => chosen = s, () => { });
+            var menu = new TrayMenu("PhoneEdge v1.2.3", installed: false, Language.Auto, () => { }, () => AutostartState.Off, () => { }, () => { }, () => { }, () => { }, s => chosen = s, () => { });
             Assert.Equal("PhoneEdge v1.2.3 (development run)", menu.Version.Text);
             Assert.Equal("Pause", menu.Pause.Text);
             Assert.True(menu.Language.DropDownItems[0].Text == "Auto");

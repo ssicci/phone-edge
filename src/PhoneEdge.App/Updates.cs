@@ -38,6 +38,14 @@ internal sealed class UpdateService
     /// <summary>설치본(Velopack)으로 실행 중인지. bin 에서 직접 실행하면 false.</summary>
     public bool IsInstalled => _manager.IsInstalled;
 
+    /// <summary>설치 루트(설치본) 또는 실행 파일 폴더(개발 실행). 탐색기로 여는 폴더.</summary>
+    public string InstallDir => IsInstalled && Velopack.Locators.VelopackLocator.Current.RootAppDir is { Length: > 0 } root ? root : AppContext.BaseDirectory;
+
+    /// <summary>설치 루트의 Velopack 실행기. 업데이트로 current 폴더가 바뀌어도 이 경로는 그대로다. 설치본이 아니면 null.</summary>
+    public string? LauncherPath => IsInstalled && Velopack.Locators.VelopackLocator.Current.RootAppDir is { Length: > 0 } root
+        ? Path.Combine(root, Path.GetFileName(Environment.ProcessPath ?? "PhoneEdge.exe"))
+        : null;
+
     public Task<UpdateInfo?> CheckAsync() => _manager.CheckForUpdatesAsync();
 
     public Task DownloadAsync(UpdateInfo info, Action<int> progress) => _manager.DownloadUpdatesAsync(info, progress);
@@ -142,6 +150,8 @@ internal sealed class UpdateController
     }
 
     public bool IsInstalled => _service.IsInstalled;
+    public string InstallDir => _service.InstallDir;
+    public string? LauncherPath => _service.LauncherPath;
 
     /// <summary>열려 있는 업데이트 창의 언어를 바꾼다.</summary>
     public void ApplyLanguage() { if (_form is { IsDisposed: false }) _form.ApplyLanguage(); }

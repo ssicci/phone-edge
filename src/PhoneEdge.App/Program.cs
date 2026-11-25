@@ -10,7 +10,10 @@ internal static class Program
     private static void Main(string[] args)
     {
         // 설치·제거·업데이트 훅 처리. 뮤텍스보다 먼저, 가장 먼저 실행한다 (시작 메뉴 바로 가기는 Velopack 이 만들고 지운다).
-        Velopack.VelopackApp.Build().Run();
+        // 제거할 때는 시작 프로그램 등록(Run, StartupApproved)도 지운다.
+        Velopack.VelopackApp.Build()
+            .OnBeforeUninstallFastCallback(_ => { try { new Core.Autostart("").Remove(); } catch { } })
+            .Run();
         NativeMethods.AttachConsole(-1);   // 터미널에서 실행하면 로그가 터미널에도 나온다
 
         // 개발용 명령. 훅·트레이·뮤텍스 없이 파일만 만들고 끝난다.

@@ -3,6 +3,18 @@
 Each version has a `## [X.Y.Z] - date` entry: the English notes first, then a `---` line and the Korean notes. `## [Unreleased]` collects the changes for the next release; `scripts/release.ps1 X.Y.Z` renames it to the new version and date. The app's update window (current language only) and the GitHub release notes show the entry as written (the app UI is available in Korean and English).
 버전마다 `## [X.Y.Z] - 날짜` 항목을 두고, 영문 설명 다음에 `---` 줄과 한글 설명을 씁니다. `## [Unreleased]`에는 다음 릴리스의 변경 내용을 모아 두고, `scripts/release.ps1 X.Y.Z`가 이를 새 버전과 날짜로 바꿉니다. 업데이트 창에는 현재 언어 부분만, GitHub 릴리스 노트에는 이 내용이 그대로 나옵니다.
 
+## [0.3.0] - 2026-11-25
+
+### Added
+- "Start with Windows" in the tray menu (off by default, installed app only). It follows the choice you make in Windows Settings → Apps → Startup, and uninstalling removes it.
+- "Open install folder" in the tray menu.
+
+---
+
+### 추가
+- 트레이 메뉴에 "Windows 시작 시 자동 실행"을 추가했습니다 (기본값 꺼짐, 설치본에서만). Windows 설정 → 앱 → 시작 프로그램에서 바꾼 내용도 따르며, 제거하면 등록도 지워집니다.
+- 트레이 메뉴에 "설치 폴더 열기"를 추가했습니다.
+
 ## [0.2.1] - 2026-11-24
 
 ### Fixed

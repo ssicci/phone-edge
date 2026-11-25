@@ -113,4 +113,8 @@ Restart the phone and reconnect the cable.</value></data>
   <data name="Update_NoNotes" xml:space="preserve"><value>(No release notes were provided.)</value></data>
   <data name="Start_Failed" xml:space="preserve"><value>PhoneEdge could not start.
 {0}</value></data>
+  <data name="Menu_Autostart" xml:space="preserve"><value>Start with Windows</value></data>
+  <data name="Menu_AutostartDevNote" xml:space="preserve"><value> (installed version only)</value></data>
+  <data name="Menu_AutostartDisabledHint" xml:space="preserve"><value>Turned off in Windows Settings (Apps → Startup). Choose this item to turn it back on.</value></data>
+  <data name="Menu_OpenFolder" xml:space="preserve"><value>Open install folder</value></data>
 </root>

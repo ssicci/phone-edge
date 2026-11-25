@@ -38,8 +38,12 @@ internal sealed class TrayApp : ApplicationContext
         _link.DiagnosisChanged += d => PostUi(() => { Logger.Info($"진단 → {d.Problem} / {d.Warnings}"); OnLinkChanged(); });
 
         _updates = new UpdateController(new UpdateService(), settings, Shutdown);
+        var autostart = _updates.LauncherPath is { } launcher ? new Autostart(launcher) : null;
         TrayMenu? trayMenu = null;
         trayMenu = new TrayMenu($"PhoneEdge v{AppInfo.Version}", _updates.IsInstalled, settings.Language,
+            () => OpenFolder(_updates.InstallDir),
+            () => autostart?.GetState() ?? AutostartState.Off,
+            () => ToggleAutostart(autostart, trayMenu!),
             () => _ = _updates.CheckAsync(manual: true), () => ShowGuide(), () => SetPaused(!_paused),
             setting =>
             {
@@ -89,6 +93,24 @@ internal sealed class TrayApp : ApplicationContext
         Logger.Info("입력 훅 설치됨. 폰 모드 비상 복귀: Ctrl+Alt+Esc. 로그: " + Logger.FilePath);
 
         _ = StartLinkAsync();
+    }
+
+    private static void OpenFolder(string dir)
+    {
+        try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("explorer.exe", $"\"{dir}\"") { UseShellExecute = true }); }
+        catch (Exception ex) { Logger.Info("open folder failed: " + ex.Message); }
+    }
+
+    private static void ToggleAutostart(Autostart? autostart, TrayMenu menu)
+    {
+        if (autostart == null) return;
+        try
+        {
+            if (autostart.GetState() == AutostartState.On) autostart.Disable(); else autostart.Enable();
+            Logger.Info("autostart → " + autostart.GetState());
+        }
+        catch (Exception ex) { Logger.Info("autostart change failed: " + ex.Message); }
+        menu.RefreshAutostart();
     }
 
     private static void AddFakeMenu(TrayMenu menu, FakePhoneLink fake)
