@@ -100,6 +100,8 @@ public sealed class SettingsStore
         public string? SkippedVersion { get; set; }
         /// <summary>"auto"(기본), "ko", "en".</summary>
         public string? Language { get; set; }
+        /// <summary>종료할 때 폰 USB 디버깅 끄기. 없으면 켜짐(기본).</summary>
+        public bool? DisableUsbDebuggingOnExit { get; set; }
     }
 
     private readonly string _path;
@@ -109,6 +111,13 @@ public sealed class SettingsStore
     {
         get => Read().SkippedVersion;
         set { var d = Read(); d.SkippedVersion = value; Write(d); }
+    }
+
+    /// <summary>종료할 때 폰의 USB 디버깅을 끌지. 기본값 true.</summary>
+    public bool DisableUsbDebuggingOnExit
+    {
+        get => Read().DisableUsbDebuggingOnExit ?? true;
+        set { var d = Read(); d.DisableUsbDebuggingOnExit = value; Write(d); }
     }
 
     public string Language

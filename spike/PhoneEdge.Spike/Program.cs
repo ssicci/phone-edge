@@ -35,6 +35,13 @@ if (mode == "diag") // 진단 관찰: diag <초> [retry|fixaccel]  — retry 는
         await ready.Task.WaitAsync(TimeSpan.FromSeconds(seconds));
         Print($"TryFixAsync(DisablePointerAcceleration) = {await link.TryFixAsync(PhoneLinkFix.DisablePointerAcceleration)}");
     }
+    else if (action == "offusb")
+    {
+        await ready.Task.WaitAsync(TimeSpan.FromSeconds(seconds));
+        var t = Stopwatch.StartNew();
+        bool r = await link.TryFixAsync(PhoneLinkFix.DisableUsbDebugging);
+        Print($"TryFixAsync(DisableUsbDebugging) = {r} ({t.ElapsedMilliseconds} ms)");
+    }
     else if (action == "retry")
     {
         await Task.Delay(TimeSpan.FromSeconds(seconds / 2));

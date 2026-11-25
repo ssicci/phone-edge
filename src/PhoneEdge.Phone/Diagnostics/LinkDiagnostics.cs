@@ -42,6 +42,25 @@ public static partial class LinkDiagnostics
             : new(PhoneLinkProblem.NoDevice, null, null);
     }
 
+    /// <summary>
+    /// After the app turned USB debugging off on purpose (PhoneLinkFix.DisableUsbDebugging), the phone shows up on USB
+    /// but not in adb, which would otherwise be reported as DebuggingOff. That state is expected, so it is reported
+    /// as no problem (so is NoDevice). The flag stays set while adb cannot see the phone (debugging off, cable removed, adb hiccup)
+    /// and is cleared as soon as adb sees the phone again in any state (the user turned debugging back on).
+    /// </summary>
+    public static (DeviceVerdict Report, bool StillIntentionallyOff) ApplyIntentionalDebuggingOff(DeviceVerdict verdict, bool intentionallyOff)
+    {
+        if (!intentionallyOff) return (verdict, false);
+        // NoDevice is hidden too: unplugging after an intentional off is expected, and turning debugging back on
+        // re-enumerates USB, which showed a ~2 s NoDevice blip on the reference phone.
+        return verdict.Problem switch
+        {
+            PhoneLinkProblem.DebuggingOff or PhoneLinkProblem.NoDevice => (new DeviceVerdict(PhoneLinkProblem.None, null, null), true),
+            PhoneLinkProblem.AdbFailed => (verdict, true),
+            _ => (verdict, false),
+        };
+    }
+
     /// <summary>`dumpsys input` 에 가상 마우스·키보드가 모두 등록됐는지 (InputReader 의 "Device N: 이름" 줄).</summary>
     public static bool HasVirtualInputDevices(string dumpsysInput, string mouseName, string keyboardName)
         => Regex.IsMatch(dumpsysInput, @"Device -?\d+: " + Regex.Escape(mouseName) + @"\s*$", RegexOptions.Multiline)

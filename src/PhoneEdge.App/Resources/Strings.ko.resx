@@ -117,4 +117,6 @@ Android Studio, Smart Switch, 다른 scrcpy가 켜져 있으면 종료한 뒤 �
   <data name="Menu_AutostartDevNote" xml:space="preserve"><value> (설치본에서만 가능)</value></data>
   <data name="Menu_AutostartDisabledHint" xml:space="preserve"><value>Windows 설정(앱 → 시작 프로그램)에서 꺼져 있습니다. 이 항목을 선택하면 다시 켭니다.</value></data>
   <data name="Menu_OpenFolder" xml:space="preserve"><value>설치 폴더 열기</value></data>
+  <data name="Menu_DisableDebugging" xml:space="preserve"><value>종료할 때 폰 USB 디버깅 끄기</value></data>
+  <data name="Menu_DisableDebuggingHint" xml:space="preserve"><value>USB 디버깅이 켜져 있으면 은행·증권 앱이 실행을 거부할 수 있습니다. PhoneEdge를 종료할 때 폰의 USB 디버깅을 끕니다. 다시 쓰려면 폰의 개발자 옵션에서 USB 디버깅을 직접 켜야 합니다.</value></data>
 </root>

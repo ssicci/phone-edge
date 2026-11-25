@@ -17,19 +17,24 @@ internal sealed class TrayMenu
     public ToolStripMenuItem Language { get; }
     public ToolStripMenuItem OpenFolder { get; }
     public ToolStripMenuItem AutostartItem { get; }
+    public ToolStripMenuItem DisableDebuggingItem { get; }
     private readonly Func<AutostartState> _autostartState;
+    private readonly Func<bool> _disableDebuggingOnExit;
     private readonly ToolStripMenuItem _exit;
 
     /// <param name="onLanguage">언어 하위 메뉴를 고르면 "auto"/"ko"/"en" 으로 호출된다.</param>
     /// <param name="autostartState">메뉴를 열 때마다 호출해 자동 실행 체크 상태를 다시 읽는다.</param>
     public TrayMenu(string versionText, bool installed, string languageSetting,
         Action onOpenFolder, Func<AutostartState> autostartState, Action onToggleAutostart,
+        Func<bool> disableDebuggingOnExit, Action onToggleDisableDebugging,
         Action onCheckUpdate, Action onGuide, Action onTogglePause, Action<string> onLanguage, Action onExit)
     {
         _autostartState = autostartState;
         _versionText = versionText;
         _installed = installed;
         Version = new ToolStripMenuItem { Enabled = false };
+        _disableDebuggingOnExit = disableDebuggingOnExit;
+        DisableDebuggingItem = new ToolStripMenuItem(null, null, (_, _) => onToggleDisableDebugging());
         OpenFolder = new ToolStripMenuItem(null, null, (_, _) => onOpenFolder());
         AutostartItem = new ToolStripMenuItem(null, null, (_, _) => onToggleAutostart()) { Enabled = installed };
         CheckUpdate = new ToolStripMenuItem(null, null, (_, _) => onCheckUpdate()) { Enabled = installed };
@@ -49,6 +54,7 @@ internal sealed class TrayMenu
         Strip.Items.Add(Guide);
         Strip.Items.Add(Pause);
         Strip.Items.Add(AutostartItem);
+        Strip.Items.Add(DisableDebuggingItem);
         Strip.Items.Add(Language);
         Strip.Items.Add(new ToolStripSeparator());
         Strip.Items.Add(_exit);
@@ -63,6 +69,7 @@ internal sealed class TrayMenu
     {
         var state = _installed ? _autostartState() : AutostartState.Off;
         AutostartItem.Checked = state == AutostartState.On;
+        DisableDebuggingItem.Checked = _disableDebuggingOnExit();
         AutostartItem.ToolTipText = state == AutostartState.DisabledInWindows ? L.T("Menu_AutostartDisabledHint") : "";
     }
 
@@ -72,6 +79,8 @@ internal sealed class TrayMenu
         Version.Text = _versionText + (_installed ? "" : L.T("Menu_DevRun"));
         OpenFolder.Text = L.T("Menu_OpenFolder");
         AutostartItem.Text = L.T("Menu_Autostart") + (_installed ? "" : L.T("Menu_AutostartDevNote"));
+        DisableDebuggingItem.Text = L.T("Menu_DisableDebugging");
+        DisableDebuggingItem.ToolTipText = L.T("Menu_DisableDebuggingHint");
         CheckUpdate.Text = L.T("Menu_CheckUpdate");
         Guide.Text = L.T("Menu_Guide");
         Pause.Text = L.T("Menu_Pause");

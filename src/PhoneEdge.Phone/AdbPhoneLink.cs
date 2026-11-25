@@ -136,9 +136,55 @@ public sealed class AdbPhoneLink : IPhoneLink
                 catch (Exception ex) { _adb.Log("포인터 가속 끄기 실패: " + ex.Message); }
                 return false;
 
+            case PhoneLinkFix.DisableUsbDebugging:
+                return await DisableUsbDebuggingAsync().ConfigureAwait(false);
+
             default:
                 return false;
         }
+    }
+
+    /// <summary>Set after the app turned USB debugging off on purpose; the supervisor then does not report DebuggingOff.</summary>
+    private volatile bool _debuggingIntentionallyOff;
+
+    /// <summary>
+    /// Turns USB debugging off with `settings put global adb_enabled 0` (called on app exit, so it must finish
+    /// within about 3 s). adbd stops right after the setting changes, so the shell may end with an error or
+    /// hang; success is decided by whether the command ran or the phone left adb afterwards.
+    /// </summary>
+    private async Task<bool> DisableUsbDebuggingAsync()
+    {
+        var s = _session;
+        if (State != PhoneLinkState.Ready || s == null) return false;
+        var sw = Stopwatch.StartNew();
+        _debuggingIntentionallyOff = true; // before the command, so the supervisor never reports the drop
+        bool ok;
+        try
+        {
+            var (code, outp) = await _adb.RunAsync(["-s", s.Serial, "shell", "settings put global adb_enabled 0"],
+                TimeSpan.FromSeconds(2), CancellationToken.None).ConfigureAwait(false);
+            _adb.Log($"adb_enabled 0: exit {code} {outp.Trim()} ({sw.ElapsedMilliseconds} ms)");
+            ok = code == 0 || await PhoneLeftAdbAsync(s.Serial).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            _adb.Log($"adb_enabled 0: {ex.Message} ({sw.ElapsedMilliseconds} ms)");
+            ok = await PhoneLeftAdbAsync(s.Serial).ConfigureAwait(false);
+        }
+        if (!ok) _debuggingIntentionallyOff = false;
+        _adb.Log($"DisableUsbDebugging = {ok} ({sw.ElapsedMilliseconds} ms)");
+        return ok;
+    }
+
+    /// <summary>True when adb no longer reports the phone as "device" (debugging went off).</summary>
+    private async Task<bool> PhoneLeftAdbAsync(string serial)
+    {
+        try
+        {
+            var (_, state) = await _adb.RunAsync(["-s", serial, "get-state"], TimeSpan.FromMilliseconds(800), CancellationToken.None).ConfigureAwait(false);
+            return state.Trim() != "device";
+        }
+        catch (TimeoutException) { return false; }
     }
 
     /// <summary>안드로이드 16+ 마우스 포인터 가속 설정 키 (0단계 실측: 0 이면 이득이 속도와 무관하게 고정).</summary>
@@ -288,9 +334,12 @@ public sealed class AdbPhoneLink : IPhoneLink
                     await SleepAsync(TimeSpan.FromMilliseconds(500), ct).ConfigureAwait(false);
                     continue;
                 }
+                bool wasOff = _debuggingIntentionallyOff;
+                (verdict, bool stillOff) = LinkDiagnostics.ApplyIntentionalDebuggingOff(verdict, wasOff);
+                if (wasOff && !stillOff) { _debuggingIntentionallyOff = false; _adb.Log("USB debugging is visible again"); }
                 if (verdict.Problem != PhoneLinkProblem.None || verdict.Serial == null)
                 {
-                    if (verdict.Problem != PhoneLinkProblem.None) SetProblem(verdict.Problem, verdict.Detail);
+                    if (verdict.Problem != PhoneLinkProblem.None || stillOff) SetProblem(verdict.Problem, verdict.Detail);
                     await SleepAsync(_options.PollInterval, ct).ConfigureAwait(false);
                     continue;
                 }

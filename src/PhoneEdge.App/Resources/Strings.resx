@@ -117,4 +117,6 @@ Restart the phone and reconnect the cable.</value></data>
   <data name="Menu_AutostartDevNote" xml:space="preserve"><value> (installed version only)</value></data>
   <data name="Menu_AutostartDisabledHint" xml:space="preserve"><value>Turned off in Windows Settings (Apps → Startup). Choose this item to turn it back on.</value></data>
   <data name="Menu_OpenFolder" xml:space="preserve"><value>Open install folder</value></data>
+  <data name="Menu_DisableDebugging" xml:space="preserve"><value>Turn off phone USB debugging on exit</value></data>
+  <data name="Menu_DisableDebuggingHint" xml:space="preserve"><value>Banking and securities apps may refuse to run while USB debugging is on. PhoneEdge turns it off when it exits. To use PhoneEdge again, turn USB debugging back on in the phone's Developer options.</value></data>
 </root>

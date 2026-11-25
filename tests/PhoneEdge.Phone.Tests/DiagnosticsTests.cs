@@ -89,6 +89,44 @@ public class DiagnosticsTests
         Assert.Equal(PhoneLinkProblem.AdbFailed, LinkDiagnostics.ClassifyDevices(new AdbDevicesResult(1, output, null), []).Problem);
     }
 
+    [Theory]
+    [InlineData(PhoneLinkProblem.DebuggingOff)]
+    [InlineData(PhoneLinkProblem.NoDevice)] // unplugged after exit, or the USB re-enumeration blip when debugging is turned back on
+    public void Intentional_off_hides_expected_states_and_keeps_flag(PhoneLinkProblem problem)
+    {
+        var (report, still) = LinkDiagnostics.ApplyIntentionalDebuggingOff(new DeviceVerdict(problem, null, "USB only"), true);
+        Assert.Equal(PhoneLinkProblem.None, report.Problem);
+        Assert.Null(report.Serial);
+        Assert.True(still);
+    }
+
+    [Fact]
+    public void Intentional_off_still_reports_adb_failure_and_keeps_flag()
+    {
+        var (report, still) = LinkDiagnostics.ApplyIntentionalDebuggingOff(new DeviceVerdict(PhoneLinkProblem.AdbFailed, null, null), true);
+        Assert.Equal(PhoneLinkProblem.AdbFailed, report.Problem);
+        Assert.True(still);
+    }
+
+    [Theory]
+    [InlineData(PhoneLinkProblem.None, "R3XX00000AA")]
+    [InlineData(PhoneLinkProblem.Unauthorized, null)]
+    [InlineData(PhoneLinkProblem.Offline, null)]
+    public void Intentional_off_clears_when_adb_sees_the_phone_again(PhoneLinkProblem problem, string? serial)
+    {
+        var v = new DeviceVerdict(problem, serial, null);
+        var (report, still) = LinkDiagnostics.ApplyIntentionalDebuggingOff(v, true);
+        Assert.Equal(v, report);
+        Assert.False(still);
+    }
+
+    [Fact]
+    public void Without_intentional_off_debugging_off_is_reported()
+    {
+        var v = new DeviceVerdict(PhoneLinkProblem.DebuggingOff, null, null);
+        Assert.Equal((v, false), LinkDiagnostics.ApplyIntentionalDebuggingOff(v, false));
+    }
+
     [Fact]
     public void Foreign_listener_on_adb_port_is_adb_failed()
     {

@@ -20,6 +20,7 @@ internal sealed class TrayApp : ApplicationContext
     private readonly UpdateController _updates;
     private readonly ToolStripMenuItem _checkUpdateItem;
     private readonly System.Windows.Forms.Timer _updateTimer = new() { Interval = 10_000 };
+    private readonly SettingsStore _settings;
     private GuideForm? _guide;
     private bool _paused, _shutdown, _problemShown;
 
@@ -37,13 +38,16 @@ internal sealed class TrayApp : ApplicationContext
         _link.ExitRequested += y => PostUi(() => _controller.OnExitRequested(y));
         _link.DiagnosisChanged += d => PostUi(() => { Logger.Info($"진단 → {d.Problem} / {d.Warnings}"); OnLinkChanged(); });
 
-        _updates = new UpdateController(new UpdateService(), settings, Shutdown);
+        _updates = new UpdateController(new UpdateService(), settings, () => Shutdown(ExitReason.Update));
+        _settings = settings;
         var autostart = _updates.LauncherPath is { } launcher ? new Autostart(launcher) : null;
         TrayMenu? trayMenu = null;
         trayMenu = new TrayMenu($"PhoneEdge v{AppInfo.Version}", _updates.IsInstalled, settings.Language,
             () => OpenFolder(_updates.InstallDir),
             () => autostart?.GetState() ?? AutostartState.Off,
             () => ToggleAutostart(autostart, trayMenu!),
+            () => settings.DisableUsbDebuggingOnExit,
+            () => { settings.DisableUsbDebuggingOnExit = !settings.DisableUsbDebuggingOnExit; trayMenu!.RefreshAutostart(); },
             () => _ = _updates.CheckAsync(manual: true), () => ShowGuide(), () => SetPaused(!_paused),
             setting =>
             {
@@ -76,6 +80,7 @@ internal sealed class TrayApp : ApplicationContext
         _tray.MouseDoubleClick += (_, e) => { if (e.Button == MouseButtons.Left && TrayStatus.HasIssue(_link.Diagnosis)) ShowGuide(); };
         _tray.Visible = true;
         RefreshTray();
+        Microsoft.Win32.SystemEvents.SessionEnding += OnSessionEnding;
 
         _notifyTimer.Tick += (_, _) => CheckNotify();
         _notifyTimer.Start();
@@ -219,25 +224,38 @@ internal sealed class TrayApp : ApplicationContext
 
     private void ExitApp()
     {
-        Shutdown();
+        Shutdown(ExitReason.UserExit);
         ExitThread();
     }
 
     /// <summary>
     /// 훅 해제와 폰 모드 정리. 정상 종료·예외·프로세스 종료 어디서든 호출되며 여러 번 불려도 안전하다.
     /// </summary>
-    public void Shutdown()
+    public void Shutdown(ExitReason reason = ExitReason.Other)
     {
         if (_shutdown) return;
         _shutdown = true;
+        try { Microsoft.Win32.SystemEvents.SessionEnding -= OnSessionEnding; } catch { }
         try { _controller.EmergencyExit(); } catch { }
         try { _interceptor.Dispose(); } catch { }
+        DisableUsbDebuggingOnExit(reason);   // 링크를 정리하기 전에 (폰이 아직 연결된 동안) 한다
         try { _notifyTimer.Stop(); _updateTimer.Stop(); _cts.Cancel(); } catch { }
         try { _link.DisposeAsync().AsTask().Wait(TimeSpan.FromSeconds(2)); } catch { }
         try { _tray.Visible = false; _tray.Dispose(); } catch { }
         Logger.Info("종료");
         Logger.Flush();
     }
+
+    /// <summary>Windows 로그오프·종료. 트레이 종료와 같이 처리한다.</summary>
+    private void OnSessionEnding(object? sender, Microsoft.Win32.SessionEndingEventArgs e)
+    {
+        Logger.Info("session ending: " + e.Reason);
+        Shutdown(ExitReason.SessionEnding);
+    }
+
+    /// <summary>종료할 때 폰의 USB 디버깅을 끈다 (은행·증권 앱이 USB 디버깅이 켜져 있으면 실행을 거부한다). 최대 3초, 실패해도 종료는 계속.</summary>
+    private void DisableUsbDebuggingOnExit(ExitReason reason)
+        => ExitPolicy.DisableUsbDebuggingIfNeeded(_link, reason, _settings.DisableUsbDebuggingOnExit, _updates.IsInstalled, Logger.Info);
 
     protected override void Dispose(bool disposing)
     {

@@ -3,6 +3,16 @@
 Each version has a `## [X.Y.Z] - date` entry: the English notes first, then a `---` line and the Korean notes. `## [Unreleased]` collects the changes for the next release; `scripts/release.ps1 X.Y.Z` renames it to the new version and date. The app's update window (current language only) and the GitHub release notes show the entry as written (the app UI is available in Korean and English).
 버전마다 `## [X.Y.Z] - 날짜` 항목을 두고, 영문 설명 다음에 `---` 줄과 한글 설명을 씁니다. `## [Unreleased]`에는 다음 릴리스의 변경 내용을 모아 두고, `scripts/release.ps1 X.Y.Z`가 이를 새 버전과 날짜로 바꿉니다. 업데이트 창에는 현재 언어 부분만, GitHub 릴리스 노트에는 이 내용이 그대로 나옵니다.
 
+## [0.4.0] - 2026-11-25
+
+### Added
+- When you exit PhoneEdge (tray menu "Exit", or signing out / shutting down Windows) while the phone is connected, it now turns off the phone's USB debugging, because banking and securities apps often refuse to run while it is on. It is on by default and can be switched off with "Turn off phone USB debugging on exit" in the tray menu. It does not do this for update restarts or crashes. Unplugging the cable alone does not turn USB debugging off, and to use PhoneEdge again you must turn it back on in the phone's Developer options.
+
+---
+
+### 추가
+- 폰이 연결된 상태에서 PhoneEdge를 종료하면(트레이 메뉴 "종료", Windows 로그오프·종료) 폰의 USB 디버깅을 끕니다. 은행·증권 앱이 USB 디버깅이 켜져 있으면 실행을 거부하는 경우가 많기 때문입니다. 기본값은 켜짐이고, 트레이 메뉴의 "종료할 때 폰 USB 디버깅 끄기"로 끌 수 있습니다. 업데이트 재시작이나 오류 종료에서는 끄지 않습니다. 케이블을 뽑는 것만으로는 USB 디버깅이 꺼지지 않으며, PhoneEdge를 다시 쓰려면 폰의 개발자 옵션에서 직접 다시 켜야 합니다.
+
 ## [0.3.0] - 2026-11-25
 
 ### Added

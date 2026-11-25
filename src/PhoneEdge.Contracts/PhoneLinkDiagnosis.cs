@@ -41,6 +41,11 @@ public enum PhoneLinkFix
     Retry,
     /// <summary>폰의 마우스 포인터 가속을 끈다.</summary>
     DisablePointerAcceleration,
+    /// <summary>
+    /// 폰의 USB 디버깅을 끈다 (은행·증권 앱이 실행을 거부하지 않도록). 성공하면 연결이 끊긴다.
+    /// 다시 켜는 것은 폰에서 직접 해야 하므로, 앱 종료처럼 사용자가 끝낼 때만 쓴다.
+    /// </summary>
+    DisableUsbDebugging,
 }
 
 /// <summary>

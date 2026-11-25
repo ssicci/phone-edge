@@ -59,13 +59,26 @@ Requires Windows 10 (version 2004) or later, 64-bit.
 
 ![Tray menu: version, check for updates, connection help, pause, language, exit](docs/images/en/tray-menu.png)
 
-Right-click the tray icon: the version (marked "development run" when started from a build folder), **Open install folder**, **Check for updates**, **Fix connection problem…** (enabled when there is a problem or a warning), **Pause**, **Start with Windows**, **언어 / Language**, and **Exit**.
+Right-click the tray icon: the version (marked "development run" when started from a build folder), **Open install folder**, **Check for updates**, **Fix connection problem…** (enabled when there is a problem or a warning), **Pause**, **Start with Windows**, **Turn off phone USB debugging on exit**, **언어 / Language**, and **Exit**.
 
 ### Start with Windows
 
 PhoneEdge does not start by itself unless you ask it to. Check **Start with Windows** in the tray menu and it starts when you sign in; uncheck it to stop. The item works only in the installed app (in a development run it is disabled and says so).
 
 It registers the installer's launcher (`%LocalAppData%\PhoneEdge\PhoneEdge.exe`) under `HKCU\Software\Microsoft\Windows\CurrentVersion\Run`, so the path stays valid after updates. If you turn PhoneEdge off in **Settings → Apps → Startup** (or Task Manager's Startup apps), the check mark disappears the next time you open the menu, and choosing the item turns it back on. Uninstalling removes the registration.
+
+### Banking and securities apps (USB debugging)
+
+Many banking and securities apps refuse to run while **USB debugging** is on, and PhoneEdge needs it on. So by default PhoneEdge **turns USB debugging off on the phone when it exits**, as long as the phone is connected and ready at that moment:
+
+- when you choose **Exit** in the tray menu, and
+- when you sign out of or shut down Windows.
+
+It does not do this when the app restarts to install an update (it must reconnect right away), when it crashes, or in a development run. If the phone is not ready (for example the cable is already unplugged) there is nothing it can do.
+
+**Unplugging the cable alone does not turn USB debugging off.** It is a setting inside the phone, and the PC has no way to send a command once the cable is gone — so exit PhoneEdge first (or leave it running until you are done) and then unplug.
+
+To use PhoneEdge again, turn **USB debugging** back on in the phone's **Developer options** and allow the computer if the phone asks. If you would rather keep it on, uncheck **Turn off phone USB debugging on exit** in the tray menu; the choice is saved.
 
 ### Language
 

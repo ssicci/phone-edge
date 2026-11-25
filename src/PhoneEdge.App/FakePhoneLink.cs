@@ -40,6 +40,7 @@ public sealed class FakePhoneLink : IPhoneLink
     {
         _log($"[fake] 자동 조치 {fix}");
         await Task.Delay(500);
+        if (fix == PhoneLinkFix.DisableUsbDebugging) return true;   // 종료할 때 호출된다. 흉내만 내고 상태는 바꾸지 않는다
         if (fix == PhoneLinkFix.Retry) SetDiagnosis(PhoneLinkProblem.None, Diagnosis.Warnings);
         else SetDiagnosis(Diagnosis.Problem, Diagnosis.Warnings & ~PhoneLinkWarnings.PointerAcceleration);
         return true;
