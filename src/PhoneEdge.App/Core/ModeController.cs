@@ -42,7 +42,6 @@ public sealed class ModeController
     }
 
     public InputMode Mode { get; private set; } = InputMode.Laptop;
-
     /// <summary>모드가 바뀔 때 발생 (UI 갱신용).</summary>
     public event Action<InputMode>? ModeChanged;
 

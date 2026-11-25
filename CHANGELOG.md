@@ -3,6 +3,16 @@
 Each version has a `## [X.Y.Z] - date` entry: the English notes first, then a `---` line and the Korean notes. `## [Unreleased]` collects the changes for the next release; `scripts/release.ps1 X.Y.Z` renames it to the new version and date. The app's update window (current language only) and the GitHub release notes show the entry as written (the app UI is available in Korean and English).
 버전마다 `## [X.Y.Z] - 날짜` 항목을 두고, 영문 설명 다음에 `---` 줄과 한글 설명을 씁니다. `## [Unreleased]`에는 다음 릴리스의 변경 내용을 모아 두고, `scripts/release.ps1 X.Y.Z`가 이를 새 버전과 날짜로 바꿉니다. 업데이트 창에는 현재 언어 부분만, GitHub 릴리스 노트에는 이 내용이 그대로 나옵니다.
 
+## [0.5.3] - 2026-11-25
+
+### Fixed
+- The mouse could not cross over to the phone when a tool such as PowerToys Mouse Without Borders was running. Those tools make Windows report real mouse movement without a device handle, and PhoneEdge discarded such movement as synthetic input, so it never saw the cursor reach the screen edge.
+
+---
+
+### 수정
+- PowerToys Mouse Without Borders 같은 도구가 실행 중이면 마우스가 폰으로 넘어가지 않던 문제를 고쳤습니다. 이런 도구가 있으면 Windows가 실제 마우스 움직임을 장치 정보 없이 전달하는데, PhoneEdge가 이를 프로그램이 만든 입력으로 보고 버려서 커서가 화면 끝에 닿은 것을 알지 못했습니다.
+
 ## [0.5.2] - 2026-11-25
 
 ### Changed

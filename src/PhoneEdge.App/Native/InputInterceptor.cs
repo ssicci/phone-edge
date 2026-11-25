@@ -111,9 +111,7 @@ internal sealed class InputInterceptor : IDisposable
         {
             uint size = (uint)Marshal.SizeOf<RAWINPUTMOUSE>();
             if (GetRawInputData(hRaw, RID_INPUT, out var raw, ref size, (uint)Marshal.SizeOf<RAWINPUTHEADER>()) == uint.MaxValue) return;
-            if (raw.Header.Type != 0 || raw.Header.Device == IntPtr.Zero) return;   // 마우스가 아니거나 주입된 입력
-            if ((raw.Mouse.Flags & MOUSE_MOVE_ABSOLUTE) != 0) return;
-            if (raw.Mouse.LastX == 0 && raw.Mouse.LastY == 0) return;
+            if (!RawMouseFilter.Accept(raw.Header.Type == 0, (raw.Mouse.Flags & MOUSE_MOVE_ABSOLUTE) != 0, raw.Mouse.LastX, raw.Mouse.LastY)) return;
             GetCursorPos(out var p);
             _controller.OnRawMove(raw.Mouse.LastX, raw.Mouse.LastY, p.X, p.Y, _rightEdgeMonitor(p.X, p.Y));
         }
