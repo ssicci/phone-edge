@@ -19,8 +19,15 @@ internal sealed class GuideForm : Form
     private readonly TextBox _detail = new() { Multiline = true, ReadOnly = true, ScrollBars = ScrollBars.Vertical, Width = 480, Height = 110, Visible = false };
     private readonly Button _openLog = new() { AutoSize = true, Visible = false };
     private readonly Button _close = new() { AutoSize = true };
+    private readonly System.Windows.Forms.Timer _autoClose = new();
     private bool _busy;
     private string _statusKey = "";
+
+    /// <summary>연결된 뒤 창이 저절로 닫힐 때까지 기다리는 시간 (사용자가 "연결됨"을 읽을 수 있을 만큼).</summary>
+    internal TimeSpan AutoCloseDelay { get; set; } = TimeSpan.FromSeconds(3);
+
+    /// <summary>제목 줄 문구 (테스트용).</summary>
+    internal string TitleText => _title.Text;
     private PhoneLinkState _lastState;
     private PhoneLinkDiagnosis _lastDiagnosis = PhoneLinkDiagnosis.Healthy;
 
@@ -63,6 +70,13 @@ internal sealed class GuideForm : Form
             try { Process.Start(new ProcessStartInfo("explorer.exe", $"/select,\"{Logger.FilePath}\"") { UseShellExecute = true }); } catch { }
         };
 
+        _autoClose.Tick += (_, _) =>
+        {
+            _autoClose.Stop();
+            if (!IsDisposed && !_busy) Close();
+        };
+        FormClosed += (_, _) => _autoClose.Dispose();
+
         Apply(link.State, link.Diagnosis);
     }
 
@@ -84,6 +98,16 @@ internal sealed class GuideForm : Form
         _status.Text = _statusKey.Length == 0 ? "" : L.T(_statusKey);
         var guide = GuidanceTable.For(d.Problem);
         bool ok = guide == null && state == PhoneLinkState.Ready;
+        bool accel = (d.Warnings & PhoneLinkWarnings.PointerAcceleration) != 0;
+
+        // 연결되면 "연결됨"을 잠깐 보여 주고 저절로 닫는다. 확인할 설정(경고)이 있으면 열어 둔다.
+        bool autoClose = ok && !accel;
+        if (!autoClose) _autoClose.Stop();
+        else if (!_autoClose.Enabled)
+        {
+            _autoClose.Interval = Math.Max(1, (int)AutoCloseDelay.TotalMilliseconds);
+            _autoClose.Start();
+        }
 
         if (guide != null)
         {
@@ -94,7 +118,7 @@ internal sealed class GuideForm : Form
         }
         else if (ok)
         {
-            _title.Text = L.T("Guide_Connected");
+            _title.Text = L.T(accel ? "Guide_ConnectedCheck" : "Guide_Connected");
             _title.ForeColor = Color.SeaGreen;
             _steps.Visible = false;
         }
@@ -105,7 +129,6 @@ internal sealed class GuideForm : Form
             _steps.Visible = false;
         }
 
-        bool accel = (d.Warnings & PhoneLinkWarnings.PointerAcceleration) != 0;
         _warnBox.Visible = accel;
         _warnText.Text = GuidanceTable.PointerAccelerationCause() + Environment.NewLine + Environment.NewLine + GuidanceTable.PointerAccelerationManual();
         _retry.Visible = guide?.CanRetry ?? false;

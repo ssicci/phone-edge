@@ -3,6 +3,22 @@
 Each version has a `## [X.Y.Z] - date` entry: the English notes first, then a `---` line and the Korean notes. `## [Unreleased]` collects the changes for the next release; `scripts/release.ps1 X.Y.Z` renames it to the new version and date. The app's update window (current language only) and the GitHub release notes show the entry as written (the app UI is available in Korean and English).
 버전마다 `## [X.Y.Z] - 날짜` 항목을 두고, 영문 설명 다음에 `---` 줄과 한글 설명을 씁니다. `## [Unreleased]`에는 다음 릴리스의 변경 내용을 모아 두고, `scripts/release.ps1 X.Y.Z`가 이를 새 버전과 날짜로 바꿉니다. 업데이트 창에는 현재 언어 부분만, GitHub 릴리스 노트에는 이 내용이 그대로 나옵니다.
 
+## [0.5.1] - 2026-11-25
+
+### Changed
+- When the phone connects while the help window is open, the window now says the phone is connected and closes by itself after 3 seconds. It stays open if a setting still needs your attention (pointer acceleration).
+
+### Fixed
+- With the phone companion app installed, plugging in the cable no longer pops up a "USB debugging is off" help window. The companion turns USB debugging on right away, but the laptop takes 2–3 seconds to see the phone; PhoneEdge now waits up to 10 seconds before calling it a problem.
+
+---
+
+### 변경
+- 안내 창이 열려 있을 때 폰이 연결되면 "연결되었습니다"로 바뀌고 3초 뒤 저절로 닫힙니다. 확인할 설정(포인터 가속)이 남아 있으면 닫지 않고 열어 둡니다.
+
+### 수정
+- 폰 도우미 앱이 설치되어 있으면 케이블을 꽂을 때마다 "USB 디버깅이 꺼져 있습니다" 안내 창이 뜨던 문제를 고쳤습니다. 도우미 앱이 바로 USB 디버깅을 켜지만 노트북이 폰을 알아보기까지 2~3초가 걸리기 때문으로, 이제 최대 10초까지 기다린 뒤에 문제로 판단합니다.
+
 ## [0.5.0] - 2026-11-25
 
 ### Added

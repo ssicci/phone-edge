@@ -102,6 +102,18 @@ public sealed class SettingsStore
         public string? Language { get; set; }
         /// <summary>종료할 때 폰 USB 디버깅 끄기. 없으면 켜짐(기본).</summary>
         public bool? DisableUsbDebuggingOnExit { get; set; }
+        /// <summary>마지막으로 확인했을 때 폰에 도우미 앱이 있었는지.</summary>
+        public bool? CompanionPresent { get; set; }
+    }
+
+    /// <summary>
+    /// 마지막으로 연결했을 때 폰에 도우미 앱이 있었는지. 폰이 빠지면 엔진은 상태를 Unknown 으로 돌리므로,
+    /// 다음에 꽂을 때 "USB 디버깅 꺼짐"이 잠깐 보이는 것이 도우미 앱이 켜는 중이어서인지 판단하는 데 쓴다.
+    /// </summary>
+    public bool CompanionPresent
+    {
+        get => Read().CompanionPresent ?? false;
+        set { var d = Read(); if (d.CompanionPresent == value) return; d.CompanionPresent = value; Write(d); }
     }
 
     private readonly string _path;

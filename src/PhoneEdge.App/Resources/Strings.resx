@@ -51,7 +51,8 @@
   <data name="Guide_AccelDone" xml:space="preserve"><value>Pointer acceleration is now off.</value></data>
   <data name="Guide_AccelFail" xml:space="preserve"><value>Could not turn it off automatically. Please change it yourself as described above.</value></data>
   <data name="Guide_Working" xml:space="preserve"><value>Working…</value></data>
-  <data name="Guide_Connected" xml:space="preserve"><value>The phone is connected. You can close this window.</value></data>
+  <data name="Guide_Connected" xml:space="preserve"><value>The phone is connected. This window will close in a moment.</value></data>
+  <data name="Guide_ConnectedCheck" xml:space="preserve"><value>The phone is connected. Check the setting below, then close this window.</value></data>
   <data name="Guide_Connecting" xml:space="preserve"><value>Connecting to the phone…</value></data>
   <data name="Guide_NoDetail" xml:space="preserve"><value>(no details)</value></data>
   <data name="Guide_AccelCause" xml:space="preserve"><value>Pointer acceleration is on in the phone, so fast mouse movements make the return to the laptop late.</value></data>

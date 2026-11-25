@@ -91,6 +91,18 @@ public class GuidanceTests
     }
 
     [Fact]
+    public void NotifierCanWaitLongerForOneCall()
+    {
+        // 도우미 앱이 있으면 꽂은 직후 USB 디버깅이 켜지기까지 PC 쪽에서 2~3초 "꺼짐"으로 보인다. 그동안은 알리지 않는다.
+        var n = new ProblemNotifier(TimeSpan.FromSeconds(2));
+        var t = new DateTime(2026, 1, 1);
+        var longer = TimeSpan.FromSeconds(10);
+        Assert.Null(n.Update(PhoneLinkProblem.DebuggingOff, false, t, longer));
+        Assert.Null(n.Update(PhoneLinkProblem.DebuggingOff, false, t.AddSeconds(3), longer));
+        Assert.Equal(PhoneLinkProblem.DebuggingOff, n.Update(PhoneLinkProblem.DebuggingOff, false, t.AddSeconds(10), longer));
+    }
+
+    [Fact]
     public void NotifierRearmsAfterReady()
     {
         var n = new ProblemNotifier(TimeSpan.FromSeconds(2));

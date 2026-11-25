@@ -21,6 +21,7 @@ internal sealed class TrayApp : ApplicationContext
     private readonly ToolStripMenuItem _checkUpdateItem;
     private readonly System.Windows.Forms.Timer _updateTimer = new() { Interval = 10_000 };
     private readonly SettingsStore _settings;
+    private bool _companionPresent;
     private GuideForm? _guide;
     private TrayMenu? _trayMenu;
     private bool _companionBusy;
@@ -42,6 +43,7 @@ internal sealed class TrayApp : ApplicationContext
 
         _updates = new UpdateController(new UpdateService(), settings, () => Shutdown(ExitReason.Update));
         _settings = settings;
+        _companionPresent = settings.CompanionPresent;
         var autostart = _updates.LauncherPath is { } launcher ? new Autostart(launcher) : null;
         TrayMenu? trayMenu = null;
         _trayMenu = trayMenu = new TrayMenu($"PhoneEdge v{AppInfo.Version}", _updates.IsInstalled, settings.Language,
@@ -187,6 +189,13 @@ internal sealed class TrayApp : ApplicationContext
 
     private void OnLinkChanged()
     {
+        // 폰이 빠지면 엔진은 Unknown 으로 돌리므로, 마지막으로 확인한 값(있음/없음)만 기억한다.
+        var companion = _link.Companion;
+        if (companion != CompanionState.Unknown)
+        {
+            bool present = companion is CompanionState.Installed or CompanionState.NeedsUpdate;
+            if (present != _companionPresent) { _companionPresent = present; _settings.CompanionPresent = present; }
+        }
         _trayMenu?.RefreshCompanion();
         RefreshTray();
         _guide?.Apply(_link.State, _link.Diagnosis);
@@ -201,7 +210,9 @@ internal sealed class TrayApp : ApplicationContext
             _toast?.ClearProblem();   // 해결됐거나 선을 뽑았으면 알림 센터에서도 지운다
             _problemShown = false;
         }
-        if (_notifier.Update(d.Problem, ready, DateTime.UtcNow) is { } problem
+        // 도우미 앱이 있으면 꽂은 직후 USB 디버깅이 켜질 때까지 PC 에는 2~3초 "꺼짐"으로 보인다. 그동안은 알리지 않는다.
+        TimeSpan? delay = _companionPresent && d.Problem == PhoneLinkProblem.DebuggingOff ? TimeSpan.FromSeconds(10) : null;
+        if (_notifier.Update(d.Problem, ready, DateTime.UtcNow, delay) is { } problem
             && GuidanceTable.For(problem) is { } g)
         {
             _problemShown = true;

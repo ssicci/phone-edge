@@ -51,7 +51,8 @@
   <data name="Guide_AccelDone" xml:space="preserve"><value>포인터 가속을 껐습니다.</value></data>
   <data name="Guide_AccelFail" xml:space="preserve"><value>자동으로 끄지 못했습니다. 위의 방법으로 직접 바꿔 주세요.</value></data>
   <data name="Guide_Working" xml:space="preserve"><value>처리 중…</value></data>
-  <data name="Guide_Connected" xml:space="preserve"><value>폰이 연결되었습니다. 이 창은 닫아도 됩니다.</value></data>
+  <data name="Guide_Connected" xml:space="preserve"><value>폰이 연결되었습니다. 이 창은 잠시 후 자동으로 닫힙니다.</value></data>
+  <data name="Guide_ConnectedCheck" xml:space="preserve"><value>폰이 연결되었습니다. 아래 설정을 확인한 뒤 창을 닫아 주세요.</value></data>
   <data name="Guide_Connecting" xml:space="preserve"><value>폰에 연결하는 중입니다…</value></data>
   <data name="Guide_NoDetail" xml:space="preserve"><value>(자세한 정보 없음)</value></data>
   <data name="Guide_AccelCause" xml:space="preserve"><value>폰의 포인터 가속이 켜져 있어 마우스를 빠르게 움직이면 노트북으로 돌아오는 시점이 늦어집니다.</value></data>

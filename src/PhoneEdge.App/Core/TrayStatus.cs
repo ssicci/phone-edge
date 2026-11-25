@@ -48,7 +48,8 @@ public sealed class ProblemNotifier
     /// 주기적으로 호출한다. 알림을 띄워야 하면 그 문제를, 아니면 null.
     /// 폰이 안 꽂힌 상태(NoDevice)는 평소 상태라 알리지 않고, 연결 시도 하나(꽂음 → 뽑음/Ready)마다 문제별로 한 번씩 알린다.
     /// </summary>
-    public PhoneLinkProblem? Update(PhoneLinkProblem problem, bool ready, DateTime now)
+    /// <param name="delay">이번 판단에만 쓸 대기 시간. null 이면 생성자에서 준 값.</param>
+    public PhoneLinkProblem? Update(PhoneLinkProblem problem, bool ready, DateTime now, TimeSpan? delay = null)
     {
         if (ready || problem == PhoneLinkProblem.NoDevice) _notified.Clear();
         if (problem != _current)
@@ -56,7 +57,7 @@ public sealed class ProblemNotifier
             _current = problem;
             _since = now;
         }
-        if (problem is PhoneLinkProblem.None or PhoneLinkProblem.NoDevice || now - _since < _delay) return null;
+        if (problem is PhoneLinkProblem.None or PhoneLinkProblem.NoDevice || now - _since < (delay ?? _delay)) return null;
         return _notified.Add(problem) ? problem : null;
     }
 }
