@@ -1,4 +1,5 @@
 using PhoneEdge.App.Core;
+using PhoneEdge.Contracts;
 
 namespace PhoneEdge.App;
 
@@ -18,6 +19,9 @@ internal sealed class TrayMenu
     public ToolStripMenuItem OpenFolder { get; }
     public ToolStripMenuItem AutostartItem { get; }
     public ToolStripMenuItem DisableDebuggingItem { get; }
+    public ToolStripMenuItem CompanionItem { get; }
+    private readonly Func<CompanionState> _companionState;
+    private bool _companionBusy;
     private readonly Func<AutostartState> _autostartState;
     private readonly Func<bool> _disableDebuggingOnExit;
     private readonly ToolStripMenuItem _exit;
@@ -27,6 +31,7 @@ internal sealed class TrayMenu
     public TrayMenu(string versionText, bool installed, string languageSetting,
         Action onOpenFolder, Func<AutostartState> autostartState, Action onToggleAutostart,
         Func<bool> disableDebuggingOnExit, Action onToggleDisableDebugging,
+        Func<CompanionState> companionState, Action onCompanion,
         Action onCheckUpdate, Action onGuide, Action onTogglePause, Action<string> onLanguage, Action onExit)
     {
         _autostartState = autostartState;
@@ -34,6 +39,8 @@ internal sealed class TrayMenu
         _installed = installed;
         Version = new ToolStripMenuItem { Enabled = false };
         _disableDebuggingOnExit = disableDebuggingOnExit;
+        _companionState = companionState;
+        CompanionItem = new ToolStripMenuItem(null, null, (_, _) => onCompanion());
         DisableDebuggingItem = new ToolStripMenuItem(null, null, (_, _) => onToggleDisableDebugging());
         OpenFolder = new ToolStripMenuItem(null, null, (_, _) => onOpenFolder());
         AutostartItem = new ToolStripMenuItem(null, null, (_, _) => onToggleAutostart()) { Enabled = installed };
@@ -55,6 +62,7 @@ internal sealed class TrayMenu
         Strip.Items.Add(Pause);
         Strip.Items.Add(AutostartItem);
         Strip.Items.Add(DisableDebuggingItem);
+        Strip.Items.Add(CompanionItem);
         Strip.Items.Add(Language);
         Strip.Items.Add(new ToolStripSeparator());
         Strip.Items.Add(_exit);
@@ -67,10 +75,27 @@ internal sealed class TrayMenu
     /// <summary>레지스트리에서 자동 실행 상태를 다시 읽어 체크 표시와 도움말에 반영한다.</summary>
     public void RefreshAutostart()
     {
+        RefreshCompanion();
         var state = _installed ? _autostartState() : AutostartState.Off;
         AutostartItem.Checked = state == AutostartState.On;
         DisableDebuggingItem.Checked = _disableDebuggingOnExit();
         AutostartItem.ToolTipText = state == AutostartState.DisabledInWindows ? L.T("Menu_AutostartDisabledHint") : "";
+    }
+
+    /// <summary>폰 도우미 앱 상태(또는 진행 중 여부)가 바뀌면 항목을 다시 그린다.</summary>
+    public void RefreshCompanion()
+    {
+        var m = CompanionMenuModel.For(_companionState(), _companionBusy);
+        CompanionItem.Visible = m.Visible;
+        CompanionItem.Enabled = m.Enabled;
+        CompanionItem.Checked = m.Checked;
+        CompanionItem.Text = L.T(m.TextKey);
+    }
+
+    public void SetCompanionBusy(bool busy)
+    {
+        _companionBusy = busy;
+        RefreshCompanion();
     }
 
     /// <summary>현재 앱 언어로 항목 문구를 다시 채운다 (언어를 바꿀 때 호출).</summary>
@@ -81,6 +106,7 @@ internal sealed class TrayMenu
         AutostartItem.Text = L.T("Menu_Autostart") + (_installed ? "" : L.T("Menu_AutostartDevNote"));
         DisableDebuggingItem.Text = L.T("Menu_DisableDebugging");
         DisableDebuggingItem.ToolTipText = L.T("Menu_DisableDebuggingHint");
+        RefreshCompanion();
         CheckUpdate.Text = L.T("Menu_CheckUpdate");
         Guide.Text = L.T("Menu_Guide");
         Pause.Text = L.T("Menu_Pause");

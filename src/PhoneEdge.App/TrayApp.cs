@@ -22,6 +22,8 @@ internal sealed class TrayApp : ApplicationContext
     private readonly System.Windows.Forms.Timer _updateTimer = new() { Interval = 10_000 };
     private readonly SettingsStore _settings;
     private GuideForm? _guide;
+    private TrayMenu? _trayMenu;
+    private bool _companionBusy;
     private bool _paused, _shutdown, _problemShown;
 
     public TrayApp(string[] args)
@@ -42,12 +44,14 @@ internal sealed class TrayApp : ApplicationContext
         _settings = settings;
         var autostart = _updates.LauncherPath is { } launcher ? new Autostart(launcher) : null;
         TrayMenu? trayMenu = null;
-        trayMenu = new TrayMenu($"PhoneEdge v{AppInfo.Version}", _updates.IsInstalled, settings.Language,
+        _trayMenu = trayMenu = new TrayMenu($"PhoneEdge v{AppInfo.Version}", _updates.IsInstalled, settings.Language,
             () => OpenFolder(_updates.InstallDir),
             () => autostart?.GetState() ?? AutostartState.Off,
             () => ToggleAutostart(autostart, trayMenu!),
             () => settings.DisableUsbDebuggingOnExit,
             () => { settings.DisableUsbDebuggingOnExit = !settings.DisableUsbDebuggingOnExit; trayMenu!.RefreshAutostart(); },
+            () => _link.Companion,
+            () => _ = InstallCompanionAsync(),
             () => _ = _updates.CheckAsync(manual: true), () => ShowGuide(), () => SetPaused(!_paused),
             setting =>
             {
@@ -100,6 +104,30 @@ internal sealed class TrayApp : ApplicationContext
         _ = StartLinkAsync();
     }
 
+    /// <summary>폰 도우미 앱을 설치·업데이트한다. 처음 설치할 때는 무엇을 하는지 먼저 확인받는다.</summary>
+    private async Task InstallCompanionAsync()
+    {
+        if (_companionBusy) return;
+        var state = _link.Companion;
+        if (CompanionMenuModel.NeedsConfirmation(state)
+            && MessageBox.Show(L.T("Companion_Confirm"), L.T("Companion_ConfirmTitle"), MessageBoxButtons.OKCancel, MessageBoxIcon.Question) != DialogResult.OK)
+            return;
+
+        _companionBusy = true;
+        _trayMenu?.SetCompanionBusy(true);
+        bool ok = false;
+        try { ok = await _link.TryFixAsync(PhoneLinkFix.InstallCompanion); }
+        catch (Exception ex) { Logger.Info("companion install failed: " + ex.Message); }
+        finally
+        {
+            _companionBusy = false;
+            _trayMenu?.SetCompanionBusy(false);
+        }
+        Logger.Info("companion install: " + (ok ? "done" : "failed") + ", state " + _link.Companion);
+        if (ok) MessageBox.Show(L.T("Companion_Done"), "PhoneEdge", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        else MessageBox.Show(L.T("Companion_Failed"), "PhoneEdge", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+    }
+
     private static void OpenFolder(string dir)
     {
         try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("explorer.exe", $"\"{dir}\"") { UseShellExecute = true }); }
@@ -128,6 +156,12 @@ internal sealed class TrayApp : ApplicationContext
             dev.DropDownItems.Add(problem.ToString(), null, (_, _) => fake.SetDiagnosis(problem, fake.Diagnosis.Warnings));
         }
         dev.DropDownItems.Add(new ToolStripSeparator());
+        foreach (var cs in Enum.GetValues<CompanionState>())
+        {
+            var state = cs;
+            dev.DropDownItems.Add("Companion: " + state, null, (_, _) => fake.SetCompanion(state));
+        }
+        dev.DropDownItems.Add(new ToolStripSeparator());
         dev.DropDownItems.Add("Warning: pointer acceleration on", null, (_, _) =>
             fake.SetDiagnosis(fake.Diagnosis.Problem, fake.Diagnosis.Warnings | PhoneLinkWarnings.PointerAcceleration));
         dev.DropDownItems.Add("No warnings", null, (_, _) => fake.SetDiagnosis(fake.Diagnosis.Problem, PhoneLinkWarnings.None));
@@ -153,6 +187,7 @@ internal sealed class TrayApp : ApplicationContext
 
     private void OnLinkChanged()
     {
+        _trayMenu?.RefreshCompanion();
         RefreshTray();
         _guide?.Apply(_link.State, _link.Diagnosis);
     }

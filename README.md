@@ -59,7 +59,7 @@ Requires Windows 10 (version 2004) or later, 64-bit.
 
 ![Tray menu: version, check for updates, connection help, pause, language, exit](docs/images/en/tray-menu.png)
 
-Right-click the tray icon: the version (marked "development run" when started from a build folder), **Open install folder**, **Check for updates**, **Fix connection problem…** (enabled when there is a problem or a warning), **Pause**, **Start with Windows**, **Turn off phone USB debugging on exit**, **언어 / Language**, and **Exit**.
+Right-click the tray icon: the version (marked "development run" when started from a build folder), **Open install folder**, **Check for updates**, **Fix connection problem…** (enabled when there is a problem or a warning), **Pause**, **Start with Windows**, **Turn off phone USB debugging on exit**, **Install phone helper app…** (shown when the phone is ready), **언어 / Language**, and **Exit**.
 
 ### Start with Windows
 
@@ -69,14 +69,27 @@ It registers the installer's launcher (`%LocalAppData%\PhoneEdge\PhoneEdge.exe`)
 
 ### Banking and securities apps (USB debugging)
 
-Many banking and securities apps refuse to run while **USB debugging** is on, and PhoneEdge needs it on. So by default PhoneEdge **turns USB debugging off on the phone when it exits**, as long as the phone is connected and ready at that moment:
+Many banking and securities apps refuse to run while **USB debugging** is on, and PhoneEdge needs it on. There are two ways to deal with this; the first is automatic and recommended.
+
+#### Phone helper app (PhoneEdge Companion, optional)
+
+A small optional Android app that **turns USB debugging on when the phone is connected to a computer with a data cable, and off when the cable is unplugged** — so banking apps work as soon as you unplug, with nothing to do on either side.
+
+- **Install:** connect the phone, wait for the green check, then choose **Install phone helper app…** in the tray menu. PhoneEdge asks you to confirm, installs the app over USB, gives it the one permission it needs (to change the USB debugging setting) and excludes it from battery optimization. The menu item then shows **Phone helper app installed**; when PhoneEdge ships a newer helper app it changes to **Update phone helper app…**.
+- **Notification:** the app keeps one persistent notification on the phone showing the current state ("USB data connection · USB debugging on"). Do not turn notifications for the app off completely if you want to see it.
+- **Samsung battery settings:** set **Settings → Apps → PhoneEdge Companion → Battery → Unrestricted**, and make sure the app is not under **Settings → Battery → Background usage limits → Sleeping apps**. Otherwise Android may stop the app.
+- **Security model, in short:** another computer you plug the phone into only sees an *unauthorized* device until you tap **Allow** on the phone, so turning USB debugging on does not give it access. A wall charger or a charge-only cable does not turn it on. The app never turns it on while unplugged. Details: [docs/companion.md](docs/companion.md).
+
+#### Without the helper app: turn it off when PhoneEdge exits
+
+By default PhoneEdge **turns USB debugging off on the phone when it exits**, as long as the phone is connected and ready at that moment:
 
 - when you choose **Exit** in the tray menu, and
 - when you sign out of or shut down Windows.
 
 It does not do this when the app restarts to install an update (it must reconnect right away), when it crashes, or in a development run. If the phone is not ready (for example the cable is already unplugged) there is nothing it can do.
 
-**Unplugging the cable alone does not turn USB debugging off.** It is a setting inside the phone, and the PC has no way to send a command once the cable is gone — so exit PhoneEdge first (or leave it running until you are done) and then unplug.
+**Without the helper app, unplugging the cable alone does not turn USB debugging off.** It is a setting inside the phone, and the PC has no way to send a command once the cable is gone — so exit PhoneEdge first (or leave it running until you are done) and then unplug. With the helper app installed, unplugging is enough.
 
 To use PhoneEdge again, turn **USB debugging** back on in the phone's **Developer options** and allow the computer if the phone asks. If you would rather keep it on, uncheck **Turn off phone USB debugging on exit** in the tray menu; the choice is saved.
 

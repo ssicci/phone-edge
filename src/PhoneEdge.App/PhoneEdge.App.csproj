@@ -35,6 +35,12 @@
     <PackageReference Include="Velopack" Version="1.2.161" />
   </ItemGroup>
 
+  <!-- 폰 도우미 앱 APK. android/ 에서 release 로 빌드해 두었으면 tools\companion.apk 로 함께 둔다 (없으면 건너뛴다). -->
+  <ItemGroup Condition="Exists('$(MSBuildThisFileDirectory)..\..\android\app\build\outputs\apk\release\app-release.apk')">
+    <None Include="..\..\android\app\build\outputs\apk\release\app-release.apk"
+          Link="tools\companion.apk" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
   <!-- 배포물에 포함할 제3자 라이선스 고지 (tools/fetch-tools.ps1 이 tools/dl/licenses 에 받는다). -->
   <ItemGroup>
     <None Include="..\..\tools\dl\licenses\*;..\..\THIRD-PARTY-NOTICES.md"

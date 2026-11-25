@@ -5,6 +5,7 @@ using System.Net.Sockets;
 using System.Threading.Channels;
 using PhoneEdge.Contracts;
 using PhoneEdge.Phone.Adb;
+using PhoneEdge.Phone.Companion;
 using PhoneEdge.Phone.Diagnostics;
 
 namespace PhoneEdge.Phone;
@@ -73,6 +74,19 @@ public sealed class AdbPhoneLink : IPhoneLink
     public event Action<PhoneLinkDiagnosis>? DiagnosisChanged;
 
     private void SetProblem(PhoneLinkProblem problem, string? detail)
+    {
+        if (problem != PhoneLinkProblem.None && DateTime.UtcNow.Ticks < Interlocked.Read(ref _quietUntilTicks))
+        {
+            _adb.Log($"diagnosis held during companion install: {problem} {detail}");
+            return;
+        }
+        UpdateDiagnosisCore(problem, detail);
+    }
+
+    /// <summary>Problems are not reported before this time (companion install makes the link flicker).</summary>
+    private long _quietUntilTicks;
+
+    private void UpdateDiagnosisCore(PhoneLinkProblem problem, string? detail)
         => UpdateDiagnosis(d => d with { Problem = problem, Detail = problem == PhoneLinkProblem.None ? null : detail });
 
     private void SetWarning(PhoneLinkWarnings flag, bool on)
@@ -136,12 +150,137 @@ public sealed class AdbPhoneLink : IPhoneLink
                 catch (Exception ex) { _adb.Log("포인터 가속 끄기 실패: " + ex.Message); }
                 return false;
 
+            case PhoneLinkFix.InstallCompanion:
+                return await InstallCompanionAsync().ConfigureAwait(false);
+
             case PhoneLinkFix.DisableUsbDebugging:
                 return await DisableUsbDebuggingAsync().ConfigureAwait(false);
 
             default:
                 return false;
         }
+    }
+
+    // ---- Companion app ----
+
+    private int _companion = (int)CompanionState.Unknown;
+    private readonly SemaphoreSlim _companionGate = new(1, 1);
+
+    public CompanionState Companion => (CompanionState)Volatile.Read(ref _companion);
+
+    /// <summary>Changes Companion and, if it changed, raises DiagnosisChanged once with the current diagnosis.</summary>
+    private void SetCompanion(CompanionState state)
+    {
+        if (Interlocked.Exchange(ref _companion, (int)state) == (int)state) return;
+        _adb.Log("companion: " + state);
+        var d = Diagnosis;
+        try { DiagnosisChanged?.Invoke(d); } catch (Exception ex) { _adb.Log("DiagnosisChanged 구독자 오류: " + ex.Message); }
+    }
+
+    /// <summary>The bundled APK's package and versionCode, read from its binary manifest. Null if missing or not the companion.</summary>
+    private ApkInfo? ReadBundledApk()
+    {
+        string? path = _options.CompanionApkPath;
+        if (string.IsNullOrEmpty(path) || !File.Exists(path)) return null;
+        var info = ApkManifestReader.TryRead(path);
+        if (info?.Package != CompanionLogic.Package)
+        {
+            _adb.Log($"companion APK unreadable or wrong package: {info?.Package ?? "(none)"}");
+            return null;
+        }
+        return info;
+    }
+
+    private async Task RefreshCompanionAsync(string serial, CancellationToken ct)
+    {
+        try
+        {
+            var apk = ReadBundledApk();
+            if (apk == null) { SetCompanion(CompanionState.Unknown); return; }
+            var (_, output) = await _adb.RunAsync(["-s", serial, "shell", CompanionLogic.QueryCommand(CompanionLogic.Package) + "; echo " + QueryEndMarker],
+                TimeSpan.FromSeconds(10), ct).ConfigureAwait(false);
+            if (!output.Contains(QueryEndMarker, StringComparison.Ordinal)) { _adb.Log("companion query failed: " + output.Trim()); return; }
+            var installed = CompanionLogic.ParseInstalled(output, CompanionLogic.Package);
+            _adb.Log($"companion on phone: installed={installed.Installed} versionCode={installed.VersionCode} " +
+                     $"writeSecureSettings={installed.CanWriteSecureSettings}; bundled versionCode={apk.Value.VersionCode}");
+            if (_session?.Serial != serial) return; // the link dropped meanwhile; checked again on the next Ready
+            SetCompanion(CompanionLogic.Decide(apk.Value.VersionCode, installed));
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException || !ct.IsCancellationRequested)
+        {
+            _adb.Log("companion check failed: " + ex.Message);
+        }
+        catch (OperationCanceledException) { }
+    }
+
+    private const string QueryEndMarker = "__PHONEEDGE_END__";
+
+    /// <summary>
+    /// install -r (uninstall + install on a signature mismatch), grant WRITE_SECURE_SETTINGS, battery allow list,
+    /// notification permission, then open the app so its foreground service starts. 60 s overall. Problems are held
+    /// back meanwhile and for a short grace period, because the app toggling adb makes the link flicker.
+    /// </summary>
+    private async Task<bool> InstallCompanionAsync()
+    {
+        var s = _session;
+        var apk = ReadBundledApk();
+        if (State != PhoneLinkState.Ready || s == null || apk == null) return false;
+        if (!await _companionGate.WaitAsync(0).ConfigureAwait(false)) return false; // already running
+        string serial = s.Serial, pkg = CompanionLogic.Package, path = _options.CompanionApkPath!;
+        var timeout = _options.CompanionInstallTimeout;
+        Interlocked.Exchange(ref _quietUntilTicks, (DateTime.UtcNow + timeout + TimeSpan.FromSeconds(15)).Ticks);
+        using var cts = new CancellationTokenSource(timeout);
+        var sw = Stopwatch.StartNew();
+        bool ok = false;
+        try
+        {
+            async Task<(int Code, string Out)> Step(string name, params string[] args)
+            {
+                var left = timeout - sw.Elapsed;
+                if (left <= TimeSpan.Zero) throw new OperationCanceledException();
+                var r = await _adb.RunAsync(["-s", serial, .. args], left, cts.Token).ConfigureAwait(false);
+                _adb.Log($"companion {name}: exit {r.Code} {r.Output.Trim()} ({sw.ElapsedMilliseconds} ms)");
+                return r;
+            }
+
+            _adb.Log($"companion install: bundled {apk.Value.VersionName} (versionCode {apk.Value.VersionCode})");
+            var (code, outp) = await Step("install -r", "install", "-r", path).ConfigureAwait(false);
+            var outcome = CompanionLogic.ParseInstall(code, outp);
+            if (outcome == InstallOutcome.SignatureMismatch)
+            {
+                await Step("uninstall (signature mismatch)", "uninstall", pkg).ConfigureAwait(false);
+                (code, outp) = await Step("install", "install", path).ConfigureAwait(false);
+                outcome = CompanionLogic.ParseInstall(code, outp);
+            }
+            if (outcome != InstallOutcome.Success)
+            {
+                _adb.Log("companion install failed: " + (CompanionLogic.FailureCode(outp) ?? outp.Trim()));
+                return false;
+            }
+
+            (code, _) = await Step("grant WRITE_SECURE_SETTINGS", "shell", $"pm grant {pkg} {CompanionLogic.WriteSecureSettings}").ConfigureAwait(false);
+            if (code != 0) return false;
+            await Step("battery allow list", "shell", $"cmd deviceidle whitelist +{pkg}").ConfigureAwait(false);
+            await Step("grant POST_NOTIFICATIONS", "shell", $"pm grant {pkg} {CompanionLogic.PostNotifications}").ConfigureAwait(false);
+            await Step("launch", "shell", $"monkey -p {pkg} -c android.intent.category.LAUNCHER 1").ConfigureAwait(false);
+            ok = true;
+        }
+        catch (Exception ex) when (ex is OperationCanceledException or TimeoutException)
+        {
+            _adb.Log($"companion install timed out after {sw.ElapsedMilliseconds} ms");
+        }
+        catch (Exception ex)
+        {
+            _adb.Log("companion install error: " + ex.Message);
+        }
+        finally
+        {
+            Interlocked.Exchange(ref _quietUntilTicks, (DateTime.UtcNow + TimeSpan.FromSeconds(10)).Ticks);
+            _companionGate.Release();
+        }
+        _adb.Log($"InstallCompanion = {ok} ({sw.ElapsedMilliseconds} ms)");
+        await RefreshCompanionAsync(serial, CancellationToken.None).ConfigureAwait(false);
+        return ok;
     }
 
     /// <summary>Set after the app turned USB debugging off on purpose; the supervisor then does not report DebuggingOff.</summary>
@@ -362,6 +501,7 @@ public sealed class AdbPhoneLink : IPhoneLink
 
                 SetProblem(PhoneLinkProblem.None, null);
                 SetState(PhoneLinkState.Ready);
+                _ = Task.Run(() => RefreshCompanionAsync(session.Serial, ct));
                 try
                 {
                     await session.Lost.Task.WaitAsync(ct).ConfigureAwait(false);
@@ -371,6 +511,7 @@ public sealed class AdbPhoneLink : IPhoneLink
                     _queue.Writer.TryWrite(new Cmd(CmdKind.Reset));
                     _session = null;
                     SetState(PhoneLinkState.Disconnected);
+                    SetCompanion(CompanionState.Unknown);
                     await session.DisposeAsync(_adb).ConfigureAwait(false);
                 }
                 await SleepAsync(TimeSpan.FromSeconds(1), ct).ConfigureAwait(false);

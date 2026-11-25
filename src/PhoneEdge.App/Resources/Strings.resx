@@ -119,4 +119,16 @@ Restart the phone and reconnect the cable.</value></data>
   <data name="Menu_OpenFolder" xml:space="preserve"><value>Open install folder</value></data>
   <data name="Menu_DisableDebugging" xml:space="preserve"><value>Turn off phone USB debugging on exit</value></data>
   <data name="Menu_DisableDebuggingHint" xml:space="preserve"><value>Banking and securities apps may refuse to run while USB debugging is on. PhoneEdge turns it off when it exits. To use PhoneEdge again, turn USB debugging back on in the phone's Developer options.</value></data>
+  <data name="Menu_CompanionInstall" xml:space="preserve"><value>Install phone helper app…</value></data>
+  <data name="Menu_CompanionUpdate" xml:space="preserve"><value>Update phone helper app…</value></data>
+  <data name="Menu_CompanionInstalled" xml:space="preserve"><value>Phone helper app installed</value></data>
+  <data name="Menu_CompanionBusy" xml:space="preserve"><value>Installing the phone helper app…</value></data>
+  <data name="Companion_ConfirmTitle" xml:space="preserve"><value>Install the phone helper app</value></data>
+  <data name="Companion_Confirm" xml:space="preserve"><value>Install the PhoneEdge Companion app on the phone?
+
+Many banking and securities apps refuse to run while USB debugging is on, but PhoneEdge needs it. The helper app turns USB debugging on when the phone is connected to a computer with a data cable and off when the cable is unplugged.
+
+PhoneEdge installs it over USB and sets it up for you: it gives the app permission to change the USB debugging setting and excludes it from battery optimization. The app shows a permanent notification with the current state. You can uninstall it like any other app.</value></data>
+  <data name="Companion_Done" xml:space="preserve"><value>The phone helper app is ready. It keeps a notification on the phone; if it stops after a while, set the app's battery usage to Unrestricted (see the README).</value></data>
+  <data name="Companion_Failed" xml:space="preserve"><value>Could not install the phone helper app. Make sure the phone is unlocked and connected, then try again. The log file has the details.</value></data>
 </root>

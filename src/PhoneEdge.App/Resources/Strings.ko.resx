@@ -119,4 +119,16 @@ Android Studio, Smart Switch, 다른 scrcpy가 켜져 있으면 종료한 뒤 �
   <data name="Menu_OpenFolder" xml:space="preserve"><value>설치 폴더 열기</value></data>
   <data name="Menu_DisableDebugging" xml:space="preserve"><value>종료할 때 폰 USB 디버깅 끄기</value></data>
   <data name="Menu_DisableDebuggingHint" xml:space="preserve"><value>USB 디버깅이 켜져 있으면 은행·증권 앱이 실행을 거부할 수 있습니다. PhoneEdge를 종료할 때 폰의 USB 디버깅을 끕니다. 다시 쓰려면 폰의 개발자 옵션에서 USB 디버깅을 직접 켜야 합니다.</value></data>
+  <data name="Menu_CompanionInstall" xml:space="preserve"><value>폰 도우미 앱 설치…</value></data>
+  <data name="Menu_CompanionUpdate" xml:space="preserve"><value>폰 도우미 앱 업데이트…</value></data>
+  <data name="Menu_CompanionInstalled" xml:space="preserve"><value>폰 도우미 앱 설치됨</value></data>
+  <data name="Menu_CompanionBusy" xml:space="preserve"><value>폰 도우미 앱을 설치하는 중…</value></data>
+  <data name="Companion_ConfirmTitle" xml:space="preserve"><value>폰 도우미 앱 설치</value></data>
+  <data name="Companion_Confirm" xml:space="preserve"><value>폰에 PhoneEdge 도우미 앱을 설치할까요?
+
+은행·증권 앱은 USB 디버깅이 켜져 있으면 실행을 거부하는 경우가 많지만, PhoneEdge는 USB 디버깅이 필요합니다. 도우미 앱은 폰이 데이터 케이블로 컴퓨터에 연결되면 USB 디버깅을 켜고, 케이블을 뽑으면 끕니다.
+
+PhoneEdge가 USB로 설치하고 설정까지 해 줍니다: USB 디버깅 설정을 바꿀 권한을 주고, 배터리 최적화에서 제외합니다. 앱은 현재 상태를 보여 주는 알림을 계속 표시합니다. 다른 앱처럼 언제든 제거할 수 있습니다.</value></data>
+  <data name="Companion_Done" xml:space="preserve"><value>폰 도우미 앱이 준비되었습니다. 폰에 알림이 계속 표시됩니다. 얼마 뒤 멈추면 앱의 배터리 사용량을 '제한 없음'으로 바꿔 주세요 (README 참고).</value></data>
+  <data name="Companion_Failed" xml:space="preserve"><value>폰 도우미 앱을 설치하지 못했습니다. 폰의 잠금이 풀려 있고 연결되어 있는지 확인한 뒤 다시 시도하세요. 자세한 내용은 로그 파일에 있습니다.</value></data>
 </root>

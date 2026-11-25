@@ -14,7 +14,7 @@ string server = Path.Combine(root, "tools", "scrcpy-server");
 string mode = args.Length > 0 ? args[0] : "demo";
 double gain = args.Length > 1 ? double.Parse(args[1]) : 2.68;
 
-await using var link = new AdbPhoneLink(adb, server, new AdbPhoneLinkOptions { Log = m => Console.WriteLine("  · " + m), CursorGain = gain });
+await using var link = new AdbPhoneLink(adb, server, new AdbPhoneLinkOptions { Log = m => Console.WriteLine("  · " + m), CursorGain = gain, CompanionApkPath = Environment.GetEnvironmentVariable("PHONEEDGE_COMPANION_APK") });
 var ready = new TaskCompletionSource();
 link.StateChanged += s => { if (s == PhoneLinkState.Ready) ready.TrySetResult(); };
 double? exitY = null;
@@ -34,6 +34,18 @@ if (mode == "diag") // 진단 관찰: diag <초> [retry|fixaccel]  — retry 는
     {
         await ready.Task.WaitAsync(TimeSpan.FromSeconds(seconds));
         Print($"TryFixAsync(DisablePointerAcceleration) = {await link.TryFixAsync(PhoneLinkFix.DisablePointerAcceleration)}");
+    }
+    else if (action is "companion" or "installcompanion") // PHONEEDGE_COMPANION_APK=<apk>
+    {
+        await ready.Task.WaitAsync(TimeSpan.FromSeconds(seconds));
+        for (int i = 0; i < 50 && link.Companion == CompanionState.Unknown; i++) await Task.Delay(100);
+        Print($"Companion = {link.Companion}");
+        if (action == "installcompanion")
+        {
+            var t = Stopwatch.StartNew();
+            bool r = await link.TryFixAsync(PhoneLinkFix.InstallCompanion);
+            Print($"TryFixAsync(InstallCompanion) = {r} ({t.ElapsedMilliseconds} ms), Companion = {link.Companion}");
+        }
     }
     else if (action == "offusb")
     {

@@ -24,6 +24,18 @@ public sealed class FakePhoneLink : IPhoneLink
     public event Action<double>? ExitRequested;
 
     public PhoneLinkDiagnosis Diagnosis { get; private set; } = PhoneLinkDiagnosis.Healthy;
+
+    /// <summary>폰 도우미 앱 상태. 폰이 Ready 가 아니면 Unknown 으로 보인다.</summary>
+    public CompanionState Companion => _state == PhoneLinkState.Ready ? _companion : CompanionState.Unknown;
+    private CompanionState _companion = CompanionState.NotInstalled;
+
+    /// <summary>개발 메뉴용: 도우미 앱 상태를 바꾼다.</summary>
+    public void SetCompanion(CompanionState state)
+    {
+        _companion = state;
+        _log($"[fake] companion → {state}");
+        DiagnosisChanged?.Invoke(Diagnosis);   // 계약: 값이 바뀌면 같은 진단으로 한 번 알려 앱이 다시 읽게 한다
+    }
     public event Action<PhoneLinkDiagnosis>? DiagnosisChanged;
 
     /// <summary>개발 메뉴용: 문제를 흉내 낸다. 문제가 있으면 Disconnected, 없으면 Ready.</summary>
@@ -40,6 +52,12 @@ public sealed class FakePhoneLink : IPhoneLink
     {
         _log($"[fake] 자동 조치 {fix}");
         await Task.Delay(500);
+        if (fix == PhoneLinkFix.InstallCompanion)
+        {
+            await Task.Delay(1500);   // 설치에는 시간이 걸린다
+            SetCompanion(CompanionState.Installed);
+            return true;
+        }
         if (fix == PhoneLinkFix.DisableUsbDebugging) return true;   // 종료할 때 호출된다. 흉내만 내고 상태는 바꾸지 않는다
         if (fix == PhoneLinkFix.Retry) SetDiagnosis(PhoneLinkProblem.None, Diagnosis.Warnings);
         else SetDiagnosis(Diagnosis.Problem, Diagnosis.Warnings & ~PhoneLinkWarnings.PointerAcceleration);

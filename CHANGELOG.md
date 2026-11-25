@@ -3,6 +3,16 @@
 Each version has a `## [X.Y.Z] - date` entry: the English notes first, then a `---` line and the Korean notes. `## [Unreleased]` collects the changes for the next release; `scripts/release.ps1 X.Y.Z` renames it to the new version and date. The app's update window (current language only) and the GitHub release notes show the entry as written (the app UI is available in Korean and English).
 버전마다 `## [X.Y.Z] - 날짜` 항목을 두고, 영문 설명 다음에 `---` 줄과 한글 설명을 씁니다. `## [Unreleased]`에는 다음 릴리스의 변경 내용을 모아 두고, `scripts/release.ps1 X.Y.Z`가 이를 새 버전과 날짜로 바꿉니다. 업데이트 창에는 현재 언어 부분만, GitHub 릴리스 노트에는 이 내용이 그대로 나옵니다.
 
+## [0.5.0] - 2026-11-25
+
+### Added
+- Optional phone helper app ("PhoneEdge Companion"): when the phone is ready, the tray menu offers **Install phone helper app…** (and **Update phone helper app…** when a newer one is bundled). The helper app turns the phone's USB debugging on when a USB data connection appears and off when the cable is unplugged, so banking and securities apps work as soon as you unplug. PhoneEdge installs it over USB, gives it its one permission and excludes it from battery optimization. The signed helper app is built in the release workflow and shipped with the installer.
+
+---
+
+### 추가
+- 선택 사항인 폰 도우미 앱("PhoneEdge Companion"): 폰이 준비되면 트레이 메뉴에 **폰 도우미 앱 설치…**(더 새로운 앱이 들어 있으면 **폰 도우미 앱 업데이트…**)가 나타납니다. 도우미 앱은 USB 데이터 연결이 생기면 폰의 USB 디버깅을 켜고 케이블을 뽑으면 꺼서, 뽑는 즉시 은행·증권 앱이 동작합니다. PhoneEdge가 USB로 설치하고, 필요한 권한 하나를 주고, 배터리 최적화에서 제외합니다. 서명된 도우미 앱은 릴리스 워크플로에서 빌드해 설치 프로그램에 함께 들어갑니다.
+
 ## [0.4.0] - 2026-11-25
 
 ### Added

@@ -72,16 +72,60 @@ cd android
 - `targetSdk 37` / `compileSdk 37`: the current stable API level (the reference phone reports API 37).
 - `gradle.properties` sets `android.overridePathCheck=true` because AGP refuses to build under a path with non-ASCII characters on Windows by default; the build works there.
 
-### Release signing (proposal, not set up)
+### Version
 
-Android only installs an update over an existing app when it is signed with the same key, so release builds need one long-lived key:
+The app version always equals PhoneEdge's: Gradle reads `<Version>X.Y.Z</Version>` from the repository's `Directory.Build.props`.
 
-1. Create one upload/release keystore once (`keytool -genkeypair -keystore phoneedge-companion.jks -alias companion -keyalg RSA -keysize 4096 -validity 10000`) and keep it **outside the repository** (password manager + an offline backup). Losing it means users must uninstall and reinstall (and re-grant the permission).
-2. Store it in GitHub Actions secrets: `COMPANION_KEYSTORE_BASE64`, `COMPANION_KEYSTORE_PASSWORD`, `COMPANION_KEY_ALIAS`, `COMPANION_KEY_PASSWORD`.
-3. In CI, decode the keystore to a temp file and pass the values as Gradle properties/environment variables to a `signingConfigs.release` block that is used only when they are present; local builds stay debug-signed.
-4. Publish the SHA-256 certificate fingerprint in the release notes so users (and PhoneEdge) can check the APK before installing.
+- `versionName` = `X.Y.Z`
+- `versionCode` = `X*10000 + Y*100 + Z` (0.4.0 → 400, 1.2.3 → 10203). Minor and patch must stay below 100; the build fails otherwise.
 
-Debug builds use the per-PC debug key, so a debug APK from another PC cannot update an installed one (uninstall first).
+Bump the version only in `Directory.Build.props`.
+
+### Release signing
+
+Android installs an update over an existing app only when both are signed with the same key. Release builds therefore use one long-lived key:
+
+| | |
+|---|---|
+| Keystore | PKCS12, alias `phoneedge-companion`, kept **outside the repository on the maintainer's PC** (store and key password are the same) |
+| Certificate | `CN=PhoneEdge Companion` |
+| SHA-256 fingerprint | `42:69:FA:0B:05:97:14:76:65:DA:03:9F:9A:00:15:FA:8A:51:4D:1B:A2:94:C7:37:4A:03:8C:9F:BB:30:FC:09` |
+| GitHub Actions secrets | `COMPANION_KEYSTORE_BASE64`, `COMPANION_KEYSTORE_PASSWORD`, `COMPANION_KEY_ALIAS`, `COMPANION_KEY_PASSWORD` |
+
+`app/build.gradle.kts` reads the signing values **only from environment variables**:
+
+| Variable | Value |
+|---|---|
+| `COMPANION_KEYSTORE_FILE` | Path to the keystore file (in CI: the base64 secret decoded to a temporary file) |
+| `COMPANION_KEYSTORE_PASSWORD` | Keystore password |
+| `COMPANION_KEY_ALIAS` | `phoneedge-companion` |
+| `COMPANION_KEY_PASSWORD` | Key password (same as the keystore password) |
+
+If any is missing, or the file does not exist, `assembleRelease` stops at once with an error naming them. `assembleDebug` never needs them.
+
+```powershell
+cd android
+.\gradlew.bat assembleRelease
+# -> android\app\build\outputs\apk\release\app-release.apk (minified, about 60 KB)
+```
+
+Check a release APK before shipping or installing it:
+
+```powershell
+& "$env:LOCALAPPDATA\Android\Sdk\build-tools\37.0.0\apksigner.bat" verify --print-certs android\app\build\outputs\apk\release\app-release.apk
+```
+
+The `certificate SHA-256 digest` must equal the fingerprint above.
+
+**If the key is lost or replaced**, no new APK can update the installed app (Android reports a signature mismatch). Each phone must then:
+
+1. Uninstall the old app (`adb uninstall io.github.ssicci.phoneedge.companion`). The in-app log and settings are lost.
+2. Install the APK signed with the new key.
+3. Grant `WRITE_SECURE_SETTINGS` again (`adb shell pm grant ...`), and set battery to Unrestricted again; both are removed with the uninstall.
+
+Then publish the new fingerprint here and in the release notes, and replace the four GitHub secrets. Keep an offline backup of the keystore and its password to avoid this.
+
+Debug builds are signed with each PC's own debug key, so a debug APK cannot be replaced by a release APK (or one from another PC) without the same uninstall → install → grant steps.
 
 ## Measured results
 

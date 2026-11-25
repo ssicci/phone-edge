@@ -62,6 +62,13 @@ public interface IPhoneLink : IAsyncDisposable
     Task<bool> TryFixAsync(PhoneLinkFix fix) => Task.FromResult(false);
 
     /// <summary>
+    /// 폰 도우미 앱 상태. Ready 가 될 때와 <see cref="PhoneLinkFix.InstallCompanion"/> 뒤에 다시 확인한다.
+    /// 값이 바뀌면 <see cref="DiagnosisChanged"/> 를 (같은 진단으로) 한 번 발생시켜 앱이 다시 읽게 한다.
+    /// 도우미 앱은 선택 사항이므로 NotInstalled 는 문제나 경고가 아니다.
+    /// </summary>
+    CompanionState Companion => CompanionState.Unknown;
+
+    /// <summary>
     /// 폰 감시와 연결을 시작한다. 폰이 없어도 실패하지 않고, 연결·끊김·재연결을
     /// StateChanged 로 알리며 Dispose 될 때까지 계속 동작한다.
     /// </summary>

@@ -13,6 +13,10 @@ internal static class PhoneLinkFactory
         return new PhoneEdge.Phone.AdbPhoneLink(
             Path.Combine(tools, "adb.exe"),
             Path.Combine(tools, "scrcpy-server"),
-            new PhoneEdge.Phone.AdbPhoneLinkOptions { Log = log });
+            new PhoneEdge.Phone.AdbPhoneLinkOptions
+            {
+                Log = log,
+                CompanionApkPath = Path.Combine(tools, "companion.apk"),   // 폰 도우미 앱. 없으면 엔진이 설치 가능 상태로 보지 않는다
+            });
     }
 }

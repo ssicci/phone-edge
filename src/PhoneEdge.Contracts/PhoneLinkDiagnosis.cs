@@ -34,6 +34,19 @@ public enum PhoneLinkWarnings
     PointerAcceleration = 1,
 }
 
+/// <summary>폰 도우미 앱(USB 디버깅을 케이블에 맞춰 켜고 끄는 선택 앱)의 상태.</summary>
+public enum CompanionState
+{
+    /// <summary>아직 확인하지 못함 (폰이 Ready 가 아니거나 확인 전).</summary>
+    Unknown,
+    /// <summary>폰에 설치되어 있지 않음.</summary>
+    NotInstalled,
+    /// <summary>설치되어 있지만 PhoneEdge 에 들어 있는 버전보다 낮거나, 권한이 빠져 있음.</summary>
+    NeedsUpdate,
+    /// <summary>최신 버전이 설치되어 있고 권한도 있음.</summary>
+    Installed,
+}
+
 /// <summary>앱이 사용자 요청으로 엔진에 맡길 수 있는 자동 조치.</summary>
 public enum PhoneLinkFix
 {
@@ -46,6 +59,11 @@ public enum PhoneLinkFix
     /// 다시 켜는 것은 폰에서 직접 해야 하므로, 앱 종료처럼 사용자가 끝낼 때만 쓴다.
     /// </summary>
     DisableUsbDebugging,
+    /// <summary>
+    /// 폰 도우미 앱(PhoneEdge Companion)을 설치하거나 업데이트하고, 필요한 권한과 배터리 예외를 준 뒤 실행한다.
+    /// 수십 초 걸릴 수 있다. 결과는 <see cref="IPhoneLink.Companion"/> 갱신으로도 나타난다.
+    /// </summary>
+    InstallCompanion,
 }
 
 /// <summary>

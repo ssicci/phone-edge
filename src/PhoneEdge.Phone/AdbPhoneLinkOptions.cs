@@ -29,6 +29,15 @@ public sealed class AdbPhoneLinkOptions
     /// <summary>UHID 장치를 만든 뒤 안드로이드가 장치를 등록할 때까지 기다리는 시간.</summary>
     public TimeSpan DeviceSettleDelay { get; init; } = TimeSpan.FromMilliseconds(500);
 
+    /// <summary>
+    /// The bundled PhoneEdge Companion APK (the app passes tools\companion.apk next to its exe). When null or missing,
+    /// Companion stays Unknown and InstallCompanion returns false.
+    /// </summary>
+    public string? CompanionApkPath { get; init; }
+
+    /// <summary>Overall time limit for InstallCompanion.</summary>
+    public TimeSpan CompanionInstallTimeout { get; init; } = TimeSpan.FromSeconds(60);
+
     /// <summary>진단 로그. null 이면 Debug 출력.</summary>
     public Action<string>? Log { get; init; }
 }

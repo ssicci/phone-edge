@@ -50,8 +50,72 @@ jobs:
           dotnet test tests/PhoneEdge.App.Tests/PhoneEdge.App.Tests.csproj -c Release
           dotnet test tests/PhoneEdge.Phone.Tests/PhoneEdge.Phone.Tests.csproj -c Release
 
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      # runner 에 들어 있는 Android SDK 에 도우미 앱이 쓰는 플랫폼과 빌드 도구를 더한다 (docs/companion.md 의 Build 참고).
+      - name: Android SDK 준비
+        shell: pwsh
+        run: |
+          $sdk = if ($env:ANDROID_HOME) { $env:ANDROID_HOME } else { $env:ANDROID_SDK_ROOT }
+          if (-not $sdk) { throw 'ANDROID_HOME 이 설정되어 있지 않습니다.' }
+          $mgr = Get-ChildItem -Path $sdk -Recurse -Filter sdkmanager.bat -ErrorAction SilentlyContinue | Select-Object -First 1
+          if (-not $mgr) { throw "sdkmanager 를 찾지 못했습니다: $sdk" }
+          (1..30 | ForEach-Object { 'y' }) | & $mgr.FullName --licenses | Out-Null
+          & $mgr.FullName 'platforms;android-37.0' 'build-tools;37.0.0'
+          if ($LASTEXITCODE -ne 0) { throw 'sdkmanager 실패' }
+
+      # 서명 키는 GitHub 비밀 값(Base64)으로 받아 임시 파일로 풀고, 끝나면 지운다. 비밀 값은 로그에 출력하지 않는다.
+      - name: 폰 도우미 앱 서명 키 준비
+        shell: pwsh
+        env:
+          COMPANION_KEYSTORE_BASE64: ${{ secrets.COMPANION_KEYSTORE_BASE64 }}
+        run: |
+          if (-not $env:COMPANION_KEYSTORE_BASE64) { throw 'COMPANION_KEYSTORE_BASE64 비밀 값이 없습니다.' }
+          $ks = Join-Path $env:RUNNER_TEMP 'companion-release.jks'
+          [IO.File]::WriteAllBytes($ks, [Convert]::FromBase64String($env:COMPANION_KEYSTORE_BASE64))
+          "COMPANION_KEYSTORE_FILE=$ks" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+
+      - name: 폰 도우미 앱 빌드 (release, 서명)
+        shell: pwsh
+        working-directory: android
+        env:
+          COMPANION_KEYSTORE_PASSWORD: ${{ secrets.COMPANION_KEYSTORE_PASSWORD }}
+          COMPANION_KEY_ALIAS: ${{ secrets.COMPANION_KEY_ALIAS }}
+          COMPANION_KEY_PASSWORD: ${{ secrets.COMPANION_KEY_PASSWORD }}
+        run: |
+          ./gradlew.bat --no-daemon assembleRelease
+          if ($LASTEXITCODE -ne 0) { throw 'gradle 실패' }
+          $apk = 'app/build/outputs/apk/release/app-release.apk'
+          if (-not (Test-Path $apk)) { throw "서명된 APK 가 없습니다: $apk (서명 설정이 적용되지 않았을 수 있습니다)" }
+
+      # 서명 인증서 지문(공개 정보)을 요약에 남겨, 사용자가 APK 를 확인할 수 있게 한다.
+      - name: 폰 도우미 앱 서명 확인
+        shell: pwsh
+        run: |
+          $sdk = if ($env:ANDROID_HOME) { $env:ANDROID_HOME } else { $env:ANDROID_SDK_ROOT }
+          $signer = Join-Path $sdk 'build-tools/37.0.0/apksigner.bat'
+          $out = & $signer verify --print-certs android/app/build/outputs/apk/release/app-release.apk
+          if ($LASTEXITCODE -ne 0) { throw 'apksigner verify 실패' }
+          $sha = ($out | Select-String 'certificate SHA-256 digest').Line
+          "### 폰 도우미 앱`n$sha" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
+
+      - name: 서명 키 지우기
+        if: always()
+        shell: pwsh
+        run: |
+          if ($env:COMPANION_KEYSTORE_FILE -and (Test-Path $env:COMPANION_KEYSTORE_FILE)) { Remove-Item $env:COMPANION_KEYSTORE_FILE -Force }
+
       - name: publish (self-contained win-x64)
         run: dotnet publish src/PhoneEdge.App/PhoneEdge.App.csproj -c Release -r win-x64 --self-contained -o publish
+
+      - name: 도우미 앱이 패키지에 들어갔는지 확인
+        shell: pwsh
+        run: |
+          if (-not (Test-Path publish/tools/companion.apk)) { throw 'publish/tools/companion.apk 가 없습니다.' }
+          'companion.apk: ' + (Get-FileHash publish/tools/companion.apk -Algorithm SHA256).Hash
 
       - name: vpk 설치
         run: dotnet tool install -g vpk --version ${{ env.VPK_VERSION }}
