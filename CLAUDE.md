@@ -6,7 +6,8 @@ Terms follow `CONTEXT.md`. A `CONTEXT.md` in a parent folder, if any, does not a
 ## Decisions
 
 - Reference device: Samsung Galaxy Z Fold7 (Android 16, One UI 8). The phone is on the mobile network and the laptop is on the office Wi-Fi, so they are not on the same network.
-- The first link is a USB cable + ADB. Nothing is installed on the phone.
+- The first link is a USB cable + ADB. Mouse and keyboard input needs nothing installed on the phone.
+- Optional phone companion app (decided 2026-11-25): banking and brokerage apps refuse to run while USB debugging is on, so a small Android app turns USB debugging on when a USB data connection appears and off when it goes away. PhoneEdge grants it `WRITE_SECURE_SETTINGS` once over adb. adb's own "always allow this computer" authorization is what keeps other PCs out. The app needs a foreground service (persistent notification) and Samsung's "unrestricted" battery setting. PhoneEdge must keep working without it.
 - Phone input goes through the scrcpy server's (Apache 2.0) control protocol, which creates a UHID virtual mouse and keyboard. scrcpy's window and mirroring are not used.
 - scrcpy's OTG (AOA) mode is excluded because it needs a USB driver swap on Windows.
 - Wireless (a Bluetooth dongle) will be added later as another implementation of `IPhoneLink`. It is not built now.
@@ -19,6 +20,7 @@ Terms follow `CONTEXT.md`. A `CONTEXT.md` in a parent folder, if any, does not a
 | `src/PhoneEdge.Contracts/` | Management session | The contract between the two modules. Other sessions must not edit it |
 | `src/PhoneEdge.Phone/`, `tests/PhoneEdge.Phone.Tests/`, `spike/`, `tools/` (except the items below), `docs/phase0.md` | Phone engine session (Opus) | ADB, scrcpy server, UHID, phone cursor tracking |
 | `src/PhoneEdge.App/`, `tests/PhoneEdge.App.Tests/` | Windows input app session (Sonnet) | Hooks, edge detection, HID conversion, tray UI, update UI |
+| `android/`, `docs/companion.md` | Phone companion app session (Opus) | Android app (Kotlin), its build and signing setup |
 | `.github/`, `scripts/`, `Directory.Build.props`, `CHANGELOG.md`, `README.md`, `README.ko.md`, `THIRD-PARTY-NOTICES.md`, `docs/images/`, `tools/*.ps1`, `tools/versions.json` | Windows input app session (Sonnet) | Installer, release automation, documentation |
 
 ## Rules for every session

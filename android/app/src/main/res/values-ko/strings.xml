@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">PhoneEdge Companion</string>
+    <string name="intro">컴퓨터와 USB 데이터 케이블로 연결되면 USB 디버깅을 켜고, 케이블을 뽑으면 끕니다. 케이블을 뺀 상태에서는 은행 앱을 쓸 수 있습니다.</string>
+    <string name="auto_switch">USB 디버깅 자동으로 켜고 끄기</string>
+    <string name="section_status">상태</string>
+    <string name="section_log">최근 기록</string>
+    <string name="log_empty">아직 기록이 없습니다.</string>
+
+    <string name="usb_data">USB 데이터 연결됨</string>
+    <string name="usb_power_only">충전만 됨 (USB 데이터 없음)</string>
+    <string name="usb_none">연결 안 됨</string>
+    <string name="adb_on">USB 디버깅 켜짐</string>
+    <string name="adb_off">USB 디버깅 꺼짐</string>
+    <string name="adb_unknown">USB 디버깅 상태 알 수 없음</string>
+
+    <string name="permission_ok">USB 디버깅 변경 권한: 있음</string>
+    <string name="permission_missing">USB 디버깅 변경 권한: 없음</string>
+    <string name="grant_help">USB 디버깅을 켠 채로 폰을 컴퓨터에 연결한 뒤, 컴퓨터의 PhoneEdge에서 한 번 권한을 주거나 다음 명령을 실행하세요:</string>
+    <string name="grant_command">adb shell pm grant %1$s android.permission.WRITE_SECURE_SETTINGS</string>
+
+    <string name="battery_ok">배터리 사용량: 제한 없음</string>
+    <string name="battery_restricted">배터리 사용량: 제한됨. 폰이 이 앱을 백그라운드에서 멈출 수 있습니다. \'제한 없음\'으로 바꾸세요.</string>
+    <string name="battery_button">배터리 설정 열기</string>
+
+    <string name="auto_blocker_on">자동 차단(Auto Blocker)이 켜져 있습니다. 자동 차단이 USB 디버깅을 스스로 끌 수 있어 자동 전환이 동작하지 않을 수 있습니다. 설정 &gt; 보안 및 개인정보 보호 &gt; 자동 차단에서 끄세요.</string>
+    <string name="auto_blocker_off">자동 차단(Auto Blocker): 꺼짐</string>
+    <string name="auto_blocker_unknown">삼성 폰의 자동 차단(설정 &gt; 보안 및 개인정보 보호)은 USB 디버깅을 스스로 끌 수 있습니다. 이 앱을 쓰는 동안에는 꺼 두세요.</string>
+
+    <string name="channel_name">상태</string>
+    <string name="notif_no_permission">권한이 없습니다. 앱을 열어 설정하세요.</string>
+    <string name="notif_auto_off">자동 전환 꺼짐</string>
+
+    <string name="tile_label">USB 디버깅</string>
+    <string name="state_on">켜짐</string>
+    <string name="state_off">꺼짐</string>
+
+    <string name="src_auto">자동</string>
+    <string name="src_tile">빠른 설정 타일</string>
+    <string name="log_set_ok">%1$s: USB 디버깅 %2$s (%3$d ms)</string>
+    <string name="log_set_failed">%1$s: USB 디버깅을 %2$s 상태로 바꾸지 못함: %3$s</string>
+    <string name="log_changed_elsewhere">다른 곳(설정, 컴퓨터, 자동 차단 등)에서 USB 디버깅이 %1$s</string>
+    <string name="log_usb_connected">USB 데이터 연결됨</string>
+    <string name="log_usb_disconnected">USB 데이터 연결 끊김</string>
+    <string name="log_service_started">서비스 시작</string>
+    <string name="log_auto_on">자동 전환 켬</string>
+    <string name="log_auto_off">자동 전환 끔</string>
+</resources>

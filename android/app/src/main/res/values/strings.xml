@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">PhoneEdge Companion</string>
+    <string name="intro">Turns USB debugging on when a USB data cable to a computer is connected, and off when it is unplugged, so banking apps work when the phone is not on the cable.</string>
+    <string name="auto_switch">Turn USB debugging on and off automatically</string>
+    <string name="section_status">Status</string>
+    <string name="section_log">Recent events</string>
+    <string name="log_empty">No events yet.</string>
+
+    <string name="usb_data">USB data connection</string>
+    <string name="usb_power_only">Charging only (no USB data)</string>
+    <string name="usb_none">Not connected</string>
+    <string name="adb_on">USB debugging on</string>
+    <string name="adb_off">USB debugging off</string>
+    <string name="adb_unknown">USB debugging state unknown</string>
+
+    <string name="permission_ok">Permission to change USB debugging: granted</string>
+    <string name="permission_missing">Permission to change USB debugging: not granted</string>
+    <string name="grant_help">Connect the phone to the computer with USB debugging on, then grant it once from PhoneEdge on the computer, or run this command:</string>
+    <string name="grant_command">adb shell pm grant %1$s android.permission.WRITE_SECURE_SETTINGS</string>
+
+    <string name="battery_ok">Battery usage: Unrestricted</string>
+    <string name="battery_restricted">Battery usage: restricted. The phone may stop this app in the background. Set it to Unrestricted.</string>
+    <string name="battery_button">Open battery setting</string>
+
+    <string name="auto_blocker_on">Auto Blocker is on. It can turn USB debugging off by itself, so automatic switching may not work. Turn it off in Settings &gt; Security and privacy &gt; Auto Blocker.</string>
+    <string name="auto_blocker_off">Auto Blocker: off</string>
+    <string name="auto_blocker_unknown">On Samsung phones, Auto Blocker (Settings &gt; Security and privacy) can turn USB debugging off by itself. Keep it off while you use this app.</string>
+
+    <string name="channel_name">Status</string>
+    <string name="notif_no_permission">Permission missing. Open the app to set it up.</string>
+    <string name="notif_auto_off">automatic switching off</string>
+
+    <string name="tile_label">USB debugging</string>
+    <string name="state_on">on</string>
+    <string name="state_off">off</string>
+
+    <string name="src_auto">Automatic</string>
+    <string name="src_tile">Quick Settings tile</string>
+    <string name="log_set_ok">%1$s: USB debugging %2$s (%3$d ms)</string>
+    <string name="log_set_failed">%1$s: could not turn USB debugging %2$s: %3$s</string>
+    <string name="log_changed_elsewhere">USB debugging turned %1$s by something else (settings, a computer, or Auto Blocker)</string>
+    <string name="log_usb_connected">USB data connected</string>
+    <string name="log_usb_disconnected">USB data disconnected</string>
+    <string name="log_service_started">Service started</string>
+    <string name="log_auto_on">Automatic switching turned on</string>
+    <string name="log_auto_off">Automatic switching turned off</string>
+</resources>
