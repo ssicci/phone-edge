@@ -21,7 +21,7 @@ internal sealed class TrayApp : ApplicationContext
     private readonly ToolStripMenuItem _checkUpdateItem;
     private readonly System.Windows.Forms.Timer _updateTimer = new() { Interval = 10_000 };
     private readonly SettingsStore _settings;
-    private bool _companionPresent;
+    private bool _companionPresent, _companionAutoTried;
     private GuideForm? _guide;
     private TrayMenu? _trayMenu;
     private bool _companionBusy;
@@ -106,12 +106,16 @@ internal sealed class TrayApp : ApplicationContext
         _ = StartLinkAsync();
     }
 
-    /// <summary>폰 도우미 앱을 설치·업데이트한다. 처음 설치할 때는 무엇을 하는지 먼저 확인받는다.</summary>
-    private async Task InstallCompanionAsync()
+    /// <summary>
+    /// 폰 도우미 앱을 설치·업데이트한다. 처음 설치할 때는 무엇을 하는지 먼저 확인받는다.
+    /// <paramref name="silent"/> 는 이미 설치된 앱의 자동 업데이트로, 확인 창과 결과 창을 띄우지 않는다
+    /// (실패하면 메뉴의 "업데이트…" 항목이 그대로 남아 직접 할 수 있다).
+    /// </summary>
+    private async Task InstallCompanionAsync(bool silent = false)
     {
         if (_companionBusy) return;
         var state = _link.Companion;
-        if (CompanionMenuModel.NeedsConfirmation(state)
+        if (!silent && CompanionMenuModel.NeedsConfirmation(state)
             && MessageBox.Show(L.T("Companion_Confirm"), L.T("Companion_ConfirmTitle"), MessageBoxButtons.OKCancel, MessageBoxIcon.Question) != DialogResult.OK)
             return;
 
@@ -125,7 +129,8 @@ internal sealed class TrayApp : ApplicationContext
             _companionBusy = false;
             _trayMenu?.SetCompanionBusy(false);
         }
-        Logger.Info("companion install: " + (ok ? "done" : "failed") + ", state " + _link.Companion);
+        Logger.Info((silent ? "companion auto-update: " : "companion install: ") + (ok ? "done" : "failed") + ", state " + _link.Companion);
+        if (silent) return;
         if (ok) MessageBox.Show(L.T("Companion_Done"), "PhoneEdge", MessageBoxButtons.OK, MessageBoxIcon.Information);
         else MessageBox.Show(L.T("Companion_Failed"), "PhoneEdge", MessageBoxButtons.OK, MessageBoxIcon.Warning);
     }
@@ -205,6 +210,15 @@ internal sealed class TrayApp : ApplicationContext
     {
         var d = _link.Diagnosis;
         bool ready = _link.State == PhoneLinkState.Ready;
+
+        // 이미 설치된 도우미 앱은 새 버전이 있으면 묻지 않고 업데이트한다 (연결마다 한 번).
+        if (!ready) _companionAutoTried = false;
+        if (CompanionMenuModel.ShouldAutoUpdate(_link.Companion, ready, _companionBusy, _controller.Mode == InputMode.Phone, _companionAutoTried))
+        {
+            _companionAutoTried = true;
+            _ = InstallCompanionAsync(silent: true);
+        }
+
         if (_problemShown && (ready || d.Problem is PhoneLinkProblem.None or PhoneLinkProblem.NoDevice))
         {
             _toast?.ClearProblem();   // 해결됐거나 선을 뽑았으면 알림 센터에서도 지운다

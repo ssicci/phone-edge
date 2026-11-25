@@ -23,4 +23,11 @@ public sealed record CompanionMenuModel(bool Visible, bool Enabled, bool Checked
 
     /// <summary>처음 설치할 때만 무엇을 하는지 확인 창을 띄운다 (업데이트는 이미 동의한 앱의 갱신이다).</summary>
     public static bool NeedsConfirmation(CompanionState state) => state == CompanionState.NotInstalled;
+
+    /// <summary>
+    /// 이미 설치된 도우미 앱을 묻지 않고 업데이트할지. 연결 한 번에 한 번만 시도하고(실패해도 반복하지 않음),
+    /// 설치 중 연결이 잠깐 흔들릴 수 있으므로 폰 모드에서는 노트북으로 돌아올 때까지 미룬다.
+    /// </summary>
+    public static bool ShouldAutoUpdate(CompanionState state, bool ready, bool busy, bool phoneMode, bool triedThisConnection)
+        => state == CompanionState.NeedsUpdate && ready && !busy && !phoneMode && !triedThisConnection;
 }

@@ -3,6 +3,16 @@
 Each version has a `## [X.Y.Z] - date` entry: the English notes first, then a `---` line and the Korean notes. `## [Unreleased]` collects the changes for the next release; `scripts/release.ps1 X.Y.Z` renames it to the new version and date. The app's update window (current language only) and the GitHub release notes show the entry as written (the app UI is available in Korean and English).
 버전마다 `## [X.Y.Z] - 날짜` 항목을 두고, 영문 설명 다음에 `---` 줄과 한글 설명을 씁니다. `## [Unreleased]`에는 다음 릴리스의 변경 내용을 모아 두고, `scripts/release.ps1 X.Y.Z`가 이를 새 버전과 날짜로 바꿉니다. 업데이트 창에는 현재 언어 부분만, GitHub 릴리스 노트에는 이 내용이 그대로 나옵니다.
 
+## [0.5.2] - 2026-11-25
+
+### Changed
+- An installed phone helper app is now updated automatically when PhoneEdge brings a newer one, the next time the phone is connected, without asking. It waits while you are using the phone, tries once per connection, and leaves **Update phone helper app…** in the menu if it fails. The first install still asks for confirmation.
+
+---
+
+### 변경
+- 폰 도우미 앱이 이미 설치되어 있으면, PhoneEdge에 더 새로운 버전이 들어올 때 다음 연결에서 묻지 않고 자동으로 업데이트합니다. 폰을 쓰는 중이면 끝날 때까지 기다리고, 연결 한 번에 한 번만 시도하며, 실패하면 메뉴에 **폰 도우미 앱 업데이트…**를 남겨 둡니다. 처음 설치할 때는 지금처럼 확인을 받습니다.
+
 ## [0.5.1] - 2026-11-25
 
 ### Changed
