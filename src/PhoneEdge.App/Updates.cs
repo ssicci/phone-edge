@@ -30,7 +30,7 @@ internal sealed class UpdateService
     {
         string? folder = Environment.GetEnvironmentVariable(SourceEnvVar);
         IUpdateSource source = string.IsNullOrWhiteSpace(folder)
-            ? new GithubSource(RepoUrl, null, false)
+            ? new GithubSource(RepoUrl, null, false, new ProxyFallbackDownloader())
             : new SimpleFileSource(new DirectoryInfo(folder));
         _manager = new UpdateManager(source);
     }

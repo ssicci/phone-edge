@@ -3,6 +3,16 @@
 Each version has a `## [X.Y.Z] - date` entry: the English notes first, then a `---` line and the Korean notes. `## [Unreleased]` collects the changes for the next release; `scripts/release.ps1 X.Y.Z` renames it to the new version and date. The app's update window (current language only) and the GitHub release notes show the entry as written (the app UI is available in Korean and English).
 버전마다 `## [X.Y.Z] - 날짜` 항목을 두고, 영문 설명 다음에 `---` 줄과 한글 설명을 씁니다. `## [Unreleased]`에는 다음 릴리스의 변경 내용을 모아 두고, `scripts/release.ps1 X.Y.Z`가 이를 새 버전과 날짜로 바꿉니다. 업데이트 창에는 현재 언어 부분만, GitHub 릴리스 노트에는 이 내용이 그대로 나옵니다.
 
+## [0.6.1] - 2026-11-26
+
+### Fixed
+- Checking for updates failed with "connection refused" when Windows has a proxy set manually (for example a company proxy) and the laptop is on another network such as a phone hotspot. PhoneEdge still uses the Windows proxy first, and if it cannot reach the proxy it now retries the same request directly.
+
+---
+
+### 수정
+- Windows에 프록시가 수동으로 설정된 노트북(예: 회사 프록시)을 휴대폰 핫스팟 같은 다른 네트워크에 연결하면, 업데이트 확인이 "연결을 거부했으므로 연결하지 못했습니다"로 실패하던 문제를 고쳤습니다. 지금처럼 Windows 프록시를 먼저 쓰고, 프록시에 닿지 못하면 같은 요청을 직접 연결로 다시 보냅니다.
+
 ## [0.6.0] - 2026-11-26
 
 ### Added
