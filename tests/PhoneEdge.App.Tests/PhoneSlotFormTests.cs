@@ -46,6 +46,30 @@ public class PhoneSlotFormTests
         });
     }
 
+    /// <summary>
+    /// v0.7.0 회귀: 설정 창은 모달이 아닌 Show() 로 열리므로 버튼의 DialogResult 만으로는 닫히지 않았다.
+    /// 그래서 [저장]을 눌러도 창이 그대로였고, 닫힐 때 저장하는 코드도 실행되지 않았다.
+    /// </summary>
+    [Theory]
+    [InlineData("Slot_Save", DialogResult.OK)]
+    [InlineData("Slot_Cancel", DialogResult.Cancel)]
+    public void ButtonsCloseTheModelessWindow(string key, DialogResult expected)
+    {
+        Sta(() =>
+        {
+            var current = new SlotCandidate(B, PhoneSide.Right, new Span(0, 1080)).ToResolved();
+            var form = new PhoneSlotForm(new[] { A, B }, current) { Opacity = 0, ShowInTaskbar = false };
+            DialogResult? closedWith = null;
+            form.FormClosed += (_, _) => closedWith = form.DialogResult;
+            form.Show();
+            Application.DoEvents();
+            Find(form, L.T(key))!.PerformClick();
+            Application.DoEvents();
+            Assert.Equal(expected, closedWith);
+            if (!form.IsDisposed) form.Dispose();
+        });
+    }
+
     [Fact]
     public void CancelLeavesNoResultAndTheTextsFollowTheLanguage()
     {

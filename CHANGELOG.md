@@ -3,6 +3,16 @@
 Each version has a `## [X.Y.Z] - date` entry: the English notes first, then a `---` line and the Korean notes. `## [Unreleased]` collects the changes for the next release; `scripts/release.ps1 X.Y.Z` renames it to the new version and date. The app's update window (current language only) and the GitHub release notes show the entry as written (the app UI is available in Korean and English).
 버전마다 `## [X.Y.Z] - 날짜` 항목을 두고, 영문 설명 다음에 `---` 줄과 한글 설명을 씁니다. `## [Unreleased]`에는 다음 릴리스의 변경 내용을 모아 두고, `scripts/release.ps1 X.Y.Z`가 이를 새 버전과 날짜로 바꿉니다. 업데이트 창에는 현재 언어 부분만, GitHub 릴리스 노트에는 이 내용이 그대로 나옵니다.
 
+## [0.7.1] - 2026-11-26
+
+### Fixed
+- In the phone position window, **Save** and **Cancel** did nothing, so the new position was never saved.
+
+---
+
+### 수정
+- 폰 위치 설정 창에서 **저장**과 **취소** 버튼을 눌러도 아무 반응이 없어 새 위치가 저장되지 않던 문제를 고쳤습니다.
+
 ## [0.7.0] - 2026-11-26
 
 ### Added

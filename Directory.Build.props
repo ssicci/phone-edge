@@ -1,6 +1,6 @@
 <Project>
   <!-- 앱 버전은 여기 한 곳에서만 올린다. scripts/release.ps1 이 이 값을 바꾼다. -->
   <PropertyGroup>
-    <Version>0.7.0</Version>
+    <Version>0.7.1</Version>
   </PropertyGroup>
 </Project>

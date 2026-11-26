@@ -15,8 +15,9 @@ internal sealed class PhoneSlotForm : Form
     private readonly Label _hint = new() { AutoSize = true, MaximumSize = new Size(560, 0) };
     private readonly Label _note = new() { AutoSize = true, MaximumSize = new Size(560, 0), ForeColor = Color.DimGray };
     private readonly Button _identify = new() { AutoSize = true };
-    private readonly Button _save = new() { AutoSize = true, DialogResult = DialogResult.OK };
-    private readonly Button _cancel = new() { AutoSize = true, DialogResult = DialogResult.Cancel };
+    // Show() 로 여는 모달리스 창이라 버튼의 DialogResult 로는 닫히지 않는다 (v0.7.0 버그). Click 에서 직접 닫는다.
+    private readonly Button _save = new() { AutoSize = true };
+    private readonly Button _cancel = new() { AutoSize = true };
     private readonly bool _firstTime;
 
     /// <summary>[저장]을 눌렀을 때 고른 폰 자리 후보 (취소면 null).</summary>
@@ -42,7 +43,17 @@ internal sealed class PhoneSlotForm : Form
 
         _canvas = new SlotCanvas(monitors, current) { Dock = DockStyle.Fill };
         _identify.Click += (_, _) => IdentifyOverlay.Show(_monitors);
-        _save.Click += (_, _) => Result = _canvas.Selected;
+        _save.Click += (_, _) =>
+        {
+            Result = _canvas.Selected;
+            DialogResult = DialogResult.OK;
+            Close();
+        };
+        _cancel.Click += (_, _) =>
+        {
+            DialogResult = DialogResult.Cancel;
+            Close();
+        };
         AcceptButton = _save;
         CancelButton = _cancel;
 
