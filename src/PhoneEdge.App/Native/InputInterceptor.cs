@@ -13,17 +13,15 @@ namespace PhoneEdge.App.Native;
 internal sealed class InputInterceptor : IDisposable
 {
     private readonly ModeController _controller;
-    private readonly Func<int, int, ScreenRect?> _rightEdgeMonitor;
     private readonly HookProc _mouseProc, _keyProc;   // GC 로부터 보호하려고 필드로 유지
     private readonly RawWindow _window;
     private IntPtr _mouseHook, _keyHook;
     private int _wheelRemainder;
     private bool _disposed;
 
-    public InputInterceptor(ModeController controller, Func<int, int, ScreenRect?> rightEdgeMonitor)
+    public InputInterceptor(ModeController controller)
     {
         _controller = controller;
-        _rightEdgeMonitor = rightEdgeMonitor;
         _mouseProc = MouseProc;
         _keyProc = KeyProc;
 
@@ -113,7 +111,7 @@ internal sealed class InputInterceptor : IDisposable
             if (GetRawInputData(hRaw, RID_INPUT, out var raw, ref size, (uint)Marshal.SizeOf<RAWINPUTHEADER>()) == uint.MaxValue) return;
             if (!RawMouseFilter.Accept(raw.Header.Type == 0, (raw.Mouse.Flags & MOUSE_MOVE_ABSOLUTE) != 0, raw.Mouse.LastX, raw.Mouse.LastY)) return;
             GetCursorPos(out var p);
-            _controller.OnRawMove(raw.Mouse.LastX, raw.Mouse.LastY, p.X, p.Y, _rightEdgeMonitor(p.X, p.Y));
+            _controller.OnRawMove(raw.Mouse.LastX, raw.Mouse.LastY, p.X, p.Y);
         }
         catch { Fail(); }
     }

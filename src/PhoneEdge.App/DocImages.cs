@@ -26,6 +26,7 @@ internal static class DocImages
             GuideImage(Path.Combine(d, "guide-debugging-off.png"), PhoneLinkProblem.DebuggingOff, PhoneLinkWarnings.None);
             GuideImage(Path.Combine(d, "guide-unauthorized.png"), PhoneLinkProblem.Unauthorized, PhoneLinkWarnings.PointerAcceleration);
             UpdateImage(Path.Combine(d, "update-window.png"));
+            PhoneSlotImage(Path.Combine(d, "phone-position.png"));
         }
     }
 
@@ -49,6 +50,19 @@ internal static class DocImages
         Save(bmp, path);
         form.Close();
         form.Dispose();
+    }
+
+    /// <summary>폰 위치 설정 창. 가짜 모니터 배치(노트북 + 큰 외부 모니터 2개, 외부 모니터 하나는 위로 어긋남)를 쓴다.</summary>
+    private static void PhoneSlotImage(string path)
+    {
+        var monitors = new List<MonitorInfo>
+        {
+            new("DOC0001", new ScreenRect(0, 360, 1920, 1440)),         // 노트북
+            new("DOC0002", new ScreenRect(1920, 0, 4480, 1440)),        // 외부 모니터
+            new("DOC0003", new ScreenRect(4480, 0, 7040, 1440)),
+        };
+        var slot = new SlotCandidate(monitors[0], PhoneSide.Left, new Span(360, 1440)).ToResolved();
+        CaptureForm(new PhoneSlotForm(monitors, slot), path);
     }
 
     private static void GuideImage(string path, PhoneLinkProblem problem, PhoneLinkWarnings warnings)

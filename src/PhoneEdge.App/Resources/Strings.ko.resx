@@ -132,7 +132,15 @@ Android Studio, Smart Switch, 다른 scrcpy가 켜져 있으면 종료한 뒤 �
 PhoneEdge가 USB로 설치하고 설정까지 해 줍니다: USB 디버깅 설정을 바꿀 권한을 주고, 배터리 최적화에서 제외합니다. 앱은 현재 상태를 보여 주는 알림을 계속 표시합니다. 다른 앱처럼 언제든 제거할 수 있습니다.</value></data>
   <data name="Companion_Done" xml:space="preserve"><value>폰 도우미 앱이 준비되었습니다. 폰에 알림이 계속 표시됩니다. 얼마 뒤 멈추면 앱의 배터리 사용량을 '제한 없음'으로 바꿔 주세요 (README 참고).</value></data>
   <data name="Companion_Failed" xml:space="preserve"><value>폰 도우미 앱을 설치하지 못했습니다. 폰의 잠금이 풀려 있고 연결되어 있는지 확인한 뒤 다시 시도하세요. 자세한 내용은 로그 파일에 있습니다.</value></data>
-  <data name="Menu_PhoneSide" xml:space="preserve"><value>폰 위치</value></data>
-  <data name="Menu_PhoneSideRight" xml:space="preserve"><value>노트북 오른쪽</value></data>
-  <data name="Menu_PhoneSideLeft" xml:space="preserve"><value>노트북 왼쪽</value></data>
+  <data name="Menu_PhoneSlot" xml:space="preserve"><value>폰 위치 설정…</value></data>
+  <data name="Slot_Title" xml:space="preserve"><value>폰 위치 설정</value></data>
+  <data name="Slot_Hint" xml:space="preserve"><value>폰을 끌어서 모니터의 빈 가장자리(점선)에 놓으세요. 그 가장자리의 빈 구간 전체가 폰으로 연결됩니다.</value></data>
+  <data name="Slot_Remember" xml:space="preserve"><value>위치는 지금 모니터 구성에 대해 기억됩니다. 모니터가 다른 책상에서는 따로 정할 수 있습니다.</value></data>
+  <data name="Slot_FirstTime" xml:space="preserve"><value>처음 보는 모니터 구성입니다. 폰이 놓인 위치를 정해 주세요.</value></data>
+  <data name="Slot_Phone" xml:space="preserve"><value>폰</value></data>
+  <data name="Slot_Identify" xml:space="preserve"><value>식별</value></data>
+  <data name="Slot_Save" xml:space="preserve"><value>저장</value></data>
+  <data name="Slot_Cancel" xml:space="preserve"><value>취소</value></data>
+  <data name="Toast_LayoutText" xml:space="preserve"><value>새 모니터 구성입니다. 폰 위치를 정해 주세요.</value></data>
+  <data name="Toast_LayoutOpen" xml:space="preserve"><value>폰 위치 설정</value></data>
 </root>

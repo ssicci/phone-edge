@@ -26,6 +26,11 @@ internal sealed class TrayApp : ApplicationContext
     private TrayMenu? _trayMenu;
     private bool _companionBusy;
     private bool _paused, _shutdown, _problemShown;
+    private PhoneSlotForm? _slotForm;
+    private List<MonitorInfo> _monitors = new();
+    private string _layoutKey = "";
+    private readonly HashSet<string> _guidedKeys = new();
+    private readonly System.Windows.Forms.Timer _displayTimer = new() { Interval = 800 };
 
     public TrayApp(string[] args)
     {
@@ -35,7 +40,7 @@ internal sealed class TrayApp : ApplicationContext
 
         _link = PhoneLinkFactory.Create(args, Logger.Info);   // 조립 지점은 PhoneLinkFactory 한 곳
         var screen = new Win32Screen();
-        _controller = new ModeController(_link, screen);
+        _controller = new ModeController(_link, screen, settings.Guard);
         _controller.ModeChanged += mode => { Logger.Info($"모드 → {mode}"); RefreshTray(); };
         _link.StateChanged += s => PostUi(() => { Logger.Info($"링크 상태 → {s}"); _controller.OnLinkStateChanged(s); OnLinkChanged(); });
         _link.ExitRequested += y => PostUi(() => _controller.OnExitRequested(y));
@@ -62,14 +67,7 @@ internal sealed class TrayApp : ApplicationContext
                 L.SetLanguage(setting);
             },
             ExitApp,
-            settings.PhoneSide,
-            side =>
-            {
-                settings.PhoneSide = side;
-                _controller.Side = side;   // 폰 모드 중이면 먼저 노트북으로 복귀한다
-                trayMenu!.SetPhoneSideChecked(side);
-            });
-        _controller.Side = settings.PhoneSide;
+            () => ShowSlotForm(firstTime: false));
         // 언어가 바뀌면 메뉴, 툴팁, 열려 있는 창이 바로 바뀐다.
         L.Changed += () =>
         {
@@ -77,6 +75,7 @@ internal sealed class TrayApp : ApplicationContext
             trayMenu!.ApplyLanguage();
             RefreshTray();
             _guide?.ApplyLanguage();
+            _slotForm?.ApplyLanguage();
             _updates.ApplyLanguage();
         };
         _pauseItem = trayMenu.Pause;
@@ -89,6 +88,7 @@ internal sealed class TrayApp : ApplicationContext
             {
                 Logger.Info("알림 클릭: " + arg);
                 if (arg == ToastXml.Retry) _ = _link.TryFixAsync(PhoneLinkFix.Retry);
+                else if (arg == ToastXml.Layout) ShowSlotForm(firstTime: true);
                 else ShowGuide(bringToFront: true);
             });
         _tray.MouseDoubleClick += (_, e) => { if (e.Button == MouseButtons.Left && TrayStatus.HasIssue(_link.Diagnosis)) ShowGuide(); };
@@ -108,8 +108,11 @@ internal sealed class TrayApp : ApplicationContext
         };
         if (_updates.IsInstalled) _updateTimer.Start();
 
-        _interceptor = new InputInterceptor(_controller,
-            (x, y) => _controller.Side == PhoneSide.Left ? screen.LeftEdgeMonitorAt(x, y) : screen.RightEdgeMonitorAt(x, y));
+        _interceptor = new InputInterceptor(_controller);
+        // 모니터 구성이 바뀌면(꽂기·뽑기·배치·해상도) 폰 모드를 풀고 그 구성의 프로필을 다시 고른다.
+        Microsoft.Win32.SystemEvents.DisplaySettingsChanged += OnDisplaySettingsChanged;
+        _displayTimer.Tick += (_, _) => { _displayTimer.Stop(); ApplyLayout(); };
+        ApplyLayout(initial: true);
         Logger.Info("입력 훅 설치됨. 폰 모드 비상 복귀: Ctrl+Alt+Esc. 로그: " + Logger.FilePath);
 
         _ = StartLinkAsync();
@@ -251,6 +254,69 @@ internal sealed class TrayApp : ApplicationContext
         }
     }
 
+    /// <summary>
+    /// 지금 모니터 구성에 맞는 배치 프로필을 골라 적용한다. 처음 보는 구성이면 기본값으로 시작하고, 한 번 안내한다.
+    /// 0.6 의 PhoneSide 설정이 있으면 이때 프로필로 옮기고 지운다.
+    /// </summary>
+    private void ApplyLayout(bool initial = false)
+    {
+        try
+        {
+            _monitors = MonitorProvider.Current();
+            if (_monitors.Count == 0) return;
+            var sel = ProfileSelector.Select(_settings.Profiles, _monitors, _settings.LegacyPhoneSide);
+            if (sel.ProfileToSave != null) _settings.SaveProfile(sel.ProfileToSave);
+            if (sel.Migrated) _settings.ClearLegacyPhoneSide();
+            _layoutKey = sel.Key;
+            _controller.Slot = sel.Slot;   // 폰 모드 중이면 먼저 노트북으로 복귀한다
+            Logger.Info($"모니터 구성 {_monitors.Count}개, 폰 자리 {sel.Slot.Side} {sel.Slot.SpanStart}~{sel.Slot.SpanEnd}"
+                + (sel.Migrated ? " (0.6 설정에서 이전)" : sel.NeedsGuidance ? " (처음 보는 구성)" : ""));
+            if (sel.NeedsGuidance && _guidedKeys.Add(sel.Key)) AnnounceNewLayout();
+        }
+        catch (Exception ex) { Logger.Info("배치 적용 실패: " + ex.Message); }
+    }
+
+    /// <summary>처음 보는 구성: Windows 알림으로, 꺼져 있으면 설정 창을 바로 띄워 폰 위치를 정해 달라고 안내한다.</summary>
+    private void AnnounceNewLayout()
+    {
+        if (_toast?.ShowLayoutPrompt() == true) { Logger.Info("폰 위치 안내 알림 표시"); return; }
+        ShowSlotForm(firstTime: true);
+    }
+
+    private void OnDisplaySettingsChanged(object? sender, EventArgs e) => PostUi(() =>
+    {
+        if (_shutdown) return;
+        _controller.EmergencyExit();   // 모니터가 바뀌는 동안 폰 모드에 남지 않게 먼저 노트북으로
+        _displayTimer.Stop();
+        _displayTimer.Start();         // 변경 알림이 연달아 오므로 잠잠해진 뒤 한 번만 다시 판정한다
+    });
+
+    private void ShowSlotForm(bool firstTime)
+    {
+        if (_slotForm is { IsDisposed: false })
+        {
+            _slotForm.Activate();
+            return;
+        }
+        _controller.EmergencyExit();
+        _monitors = MonitorProvider.Current();
+        if (_monitors.Count == 0) return;
+        var form = new PhoneSlotForm(_monitors, _controller.Slot, firstTime);
+        _slotForm = form;
+        form.FormClosed += (_, _) =>
+        {
+            _slotForm = null;
+            if (form.DialogResult != DialogResult.OK || form.Result is not { } c) return;
+            _settings.SaveProfile(new LayoutProfile { Key = PhoneSlots.KeyOf(_monitors), Slot = PhoneSlots.ToSetting(c) });
+            _controller.Slot = c.ToResolved();
+            Logger.Info($"폰 자리 저장: {c.Side} {c.Span.Start}~{c.Span.End}");
+        };
+        form.Show();
+        form.TopMost = true;   // 트레이 앱이라 포커스를 못 얻을 수 있으므로 잠깐 위로 올린다
+        form.BeginInvoke(() => { if (!form.IsDisposed) form.TopMost = false; });
+        form.Activate();
+    }
+
     private void ShowGuide() => ShowGuide(bringToFront: false);
 
     private void ShowGuide(bool bringToFront)
@@ -305,6 +371,7 @@ internal sealed class TrayApp : ApplicationContext
         if (_shutdown) return;
         _shutdown = true;
         try { Microsoft.Win32.SystemEvents.SessionEnding -= OnSessionEnding; } catch { }
+        try { Microsoft.Win32.SystemEvents.DisplaySettingsChanged -= OnDisplaySettingsChanged; _displayTimer.Stop(); } catch { }
         try { _controller.EmergencyExit(); } catch { }
         try { _interceptor.Dispose(); } catch { }
         DisableUsbDebuggingOnExit(reason);   // 링크를 정리하기 전에 (폰이 아직 연결된 동안) 한다

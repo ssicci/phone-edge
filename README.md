@@ -2,7 +2,7 @@
 
 **English** | [한국어](README.ko.md)
 
-Push your laptop's mouse cursor off the right edge of the screen and keep going — your mouse and keyboard now control the USB-connected Android phone next to it. Push past the phone's left edge to come back. Nothing is installed on the phone.
+Push your laptop's mouse cursor off the edge of the screen next to the phone (the right edge by default) and keep going — your mouse and keyboard now control the USB-connected Android phone. Push past the phone's matching edge to come back. Nothing is installed on the phone.
 
 ![Laptop and phone: pushing the cursor past the right edge sends input to the phone; pushing past the phone's left edge returns it](docs/images/en/how-it-works.svg)
 
@@ -12,9 +12,9 @@ Push your laptop's mouse cursor off the right edge of the screen and keep going 
 
 ![PhoneEdge hooks mouse and keyboard on Windows and sends them over adb to the scrcpy server on the phone, which creates a virtual mouse and keyboard with UHID](docs/images/en/architecture.svg)
 
-- The app watches the mouse with Raw Input and low-level hooks. In **laptop mode** nothing changes. When the cursor is pushed past the right edge of the rightmost monitor and the phone is ready, the app switches to **phone mode**: input is no longer given to Windows and is sent to the phone instead.
+- The app watches the mouse with Raw Input and low-level hooks. In **laptop mode** nothing changes. When the cursor is pushed past the **phone slot** (by default the right edge of the rightmost monitor) and the phone is ready, the app switches to **phone mode**: input is no longer given to Windows and is sent to the phone instead.
 - The input travels over the USB cable using `adb` to the [scrcpy](https://github.com/Genymobile/scrcpy) server (control protocol only — no screen mirroring). The server creates a virtual mouse and keyboard with UHID, so Android treats them as real hardware.
-- The app tracks where the phone cursor is. When it leaves the phone's left edge, input returns to the laptop at the same height.
+- The app tracks where the phone cursor is. When it leaves the phone's edge that faces the laptop, input returns to the laptop at the same position.
 
 ## Install
 
@@ -38,11 +38,36 @@ Requires Windows 10 (version 2004) or later, 64-bit.
 
 ## Using it
 
-- When the tray icon shows the green check, the phone is ready. Push the cursor past the right edge of your rightmost monitor to enter **phone mode** (blue arrow icon).
-- Push the phone cursor past the phone's left edge to return to the laptop. The laptop cursor reappears at the same height.
-- **Phone on the left?** Choose **Phone position → Left of the laptop** in the tray menu (the default is **Right of the laptop**). Then you push past the left edge of your leftmost monitor to enter, the cursor appears at the phone's right edge, and pushing past the phone's right edge brings you back. The choice is saved and applies immediately; if you change it while in phone mode, PhoneEdge returns to the laptop first.
+- When the tray icon shows the green check, the phone is ready. Push the cursor past the edge where the phone sits (by default the right edge of your rightmost monitor) to enter **phone mode** (blue arrow icon). Phone elsewhere? See [Phone position](#phone-position).
+- Push the phone cursor past the phone's edge that faces the laptop (with the default position, the phone's left edge) to return to the laptop. The laptop cursor reappears at the same relative position, just inside the screen edge.
 - **`Ctrl+Alt+Esc`** returns to the laptop immediately, from anywhere. Unplugging the phone also returns automatically.
 - While in phone mode, mouse movement, clicks, wheel, back/forward buttons and the keyboard (including Hangul/Hanja keys, right Alt/Ctrl and arrow keys) go to the phone.
+
+### Phone position
+
+By default PhoneEdge assumes the phone is to the right of your rightmost monitor. If it sits somewhere else, choose **Phone position…** in the tray menu:
+
+![The Phone position window: monitors drawn as numbered boxes, a phone rectangle snapped to a free edge](docs/images/en/phone-position.png)
+
+- The window draws your monitors as numbered boxes. **Drag the phone onto a free edge of a monitor** (the dashed lines); it snaps to the whole free part of that edge. The phone can be on any of the four sides: left, right, above or below.
+- An edge, or the part of an edge, that touches another monitor cannot be used, because the cursor passes to that monitor there. When monitors differ in size or position, only the part that no other monitor touches is offered.
+- **Identify** shows a big number on every monitor for 2 seconds so you can match the monitors to the picture. **Save** applies the position at once (if you are in phone mode, PhoneEdge returns to the laptop first); **Cancel** keeps the old one.
+- The position is remembered **per set of monitors**. Take the laptop to another desk (different monitors, or the same ones arranged differently) and it gets its own position; back at the first desk, the first one comes back by itself. Monitors are told apart by their own identity (model and serial number as the monitor reports them), so changing the resolution or the port does not matter.
+- The first time PhoneEdge sees a new set of monitors it starts with the default (the right edge of the rightmost monitor) and shows a notification asking you to set the position; click it to open the window. If Windows notifications are off, the window opens by itself instead.
+- If you set the phone to the left or right in 0.6, that choice is carried over to your current monitors automatically.
+- With the phone above or below, the cursor goes off the top or bottom edge and appears at the phone's edge that faces the laptop; the position along the edge is kept.
+
+#### Avoiding accidental entry
+
+So that ordinary mouse use near a screen edge does not switch to phone mode by mistake:
+
+- **The ends of the phone slot are skipped** (10% at each end of the edge). That keeps the window close and minimize buttons, the Start button and the taskbar corners working.
+- **You have to keep pushing:** after the cursor reaches the edge, push about another 120 mouse counts in the same direction (about 3 mm of mouse travel at 1000 DPI). Moving the other way, or stopping for more than half a second, starts over.
+- These values can be changed in `settings.json` (in the install folder). Missing values keep the defaults; out-of-range values are brought into range. Set `PushCounts` and `CornerRatio` to 0 to switch the guard off:
+
+```json
+"EntryGuard": { "CornerRatio": 0.1, "PushCounts": 120, "IdleResetMs": 500 }
+```
 
 ### Tray icon
 
@@ -60,7 +85,7 @@ Requires Windows 10 (version 2004) or later, 64-bit.
 
 ![Tray menu: version, check for updates, connection help, pause, language, exit](docs/images/en/tray-menu.png)
 
-Right-click the tray icon: the version (marked "development run" when started from a build folder), **Open install folder**, **Check for updates**, **Fix connection problem…** (enabled when there is a problem or a warning), **Pause**, **Phone position** (right or left of the laptop), **Start with Windows**, **Turn off phone USB debugging on exit**, **Install phone helper app…** (shown when the phone is ready), **언어 / Language**, and **Exit**.
+Right-click the tray icon: the version (marked "development run" when started from a build folder), **Open install folder**, **Check for updates**, **Fix connection problem…** (enabled when there is a problem or a warning), **Pause**, **Phone position…** (where the phone sits), **Start with Windows**, **Turn off phone USB debugging on exit**, **Install phone helper app…** (shown when the phone is ready), **언어 / Language**, and **Exit**.
 
 ### Start with Windows
 
@@ -134,7 +159,7 @@ Before restarting for an update the app leaves phone mode and releases its hooks
 
 - USB cable only for now (wireless is planned as a separate link). One phone at a time.
 - Tested on the Galaxy Z Fold7 only. Folding and unfolding the phone while connected has not been measured.
-- The phone can be to the **right** or **left** of the laptop (**Phone position** in the tray menu); above or below is not supported yet. Edge crossing happens only on the outermost monitor on that side (rightmost or leftmost).
+- The phone can be on any of the four sides of your monitors (**Phone position…**), but only on an edge, or part of an edge, that no other monitor touches, and there is one phone position per set of monitors. Moving the cursor through the phone position only works there; the rest of your screen edges behave as usual.
 - Phone mode uses Raw Input from a mouse. Precision touchpads may not report movement this way, so use an external mouse.
 - The installer is not code-signed (SmartScreen warning). Windows notifications need Windows 10 2004 or later.
 - The app does not replace the phone's own settings: pointer acceleration should be off for accurate returns.

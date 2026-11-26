@@ -4,19 +4,6 @@ namespace PhoneEdge.App.Core;
 
 public enum InputMode { Laptop, Phone }
 
-/// <summary>폰을 노트북의 어느 쪽에 두었는지. 설정 값은 "right"(기본) / "left".</summary>
-public enum PhoneSide { Right, Left }
-
-public static class PhoneSides
-{
-    public const string RightText = "right", LeftText = "left";
-
-    /// <summary>알 수 없거나 없는 값은 오른쪽(기본).</summary>
-    public static PhoneSide Parse(string? text) => text == LeftText ? PhoneSide.Left : PhoneSide.Right;
-
-    public static string ToText(PhoneSide side) => side == PhoneSide.Left ? LeftText : RightText;
-}
-
 /// <summary>화면(모니터) 사각형. Right/Bottom 은 포함하지 않는 값.</summary>
 public readonly record struct ScreenRect(int Left, int Top, int Right, int Bottom)
 {
@@ -26,11 +13,8 @@ public readonly record struct ScreenRect(int Left, int Top, int Right, int Botto
 /// <summary>노트북 커서를 움직이는 쪽 (Win32 구현은 Native 에 있다).</summary>
 public interface ICursorPlacer
 {
-    /// <summary>우측 경계 안쪽, 높이 비율 yRatio 위치에 커서를 놓는다.</summary>
-    void PlaceAtRightEdge(ScreenRect monitor, double yRatio);
-
-    /// <summary>좌측 경계 안쪽, 높이 비율 yRatio 위치에 커서를 놓는다.</summary>
-    void PlaceAtLeftEdge(ScreenRect monitor, double yRatio);
+    /// <summary>화면 좌표 (x, y) 로 커서를 옮긴다.</summary>
+    void PlaceAt(int x, int y);
 }
 
 /// <summary>
@@ -47,33 +31,43 @@ public sealed class ModeController
     private readonly HashSet<int> _phoneDownVks = new();    // 폰 모드에서 눌려 Windows 가 모르는 키
     private readonly HashSet<int> _windowsDownVks = new();  // 노트북 모드에서 눌려 Windows 가 아는 키
     private PhoneMouseButtons _phoneButtons, _windowsButtons, _swallowedUp;
-    private ScreenRect _entryMonitor;
     private double _lastYRatio;
-    private PhoneSide _side = PhoneSide.Right;       // 설정: 폰이 있는 쪽
-    private PhoneSide _entrySide = PhoneSide.Right;  // 이번 폰 모드에 들어갈 때의 쪽 (복귀 위치 기준)
+    private ResolvedSlot? _slot;                     // 지금 모니터 구성의 폰 자리 (null 이면 진입하지 않음)
+    private ResolvedSlot _entrySlot;                 // 이번 폰 모드에 들어갈 때의 폰 자리 (복귀 위치 기준)
+    private double _pushed;                          // 경계에 닿은 뒤 밀어낸 거리 (오진입 방지)
+    private long _lastPushTick;
+    private readonly Func<long> _clock;
+    /// <summary>복귀할 때 커서를 경계에서 이만큼 안쪽에 놓는다 (바로 다시 진입하지 않도록).</summary>
+    public const int ReturnInset = 8;
     private bool _enabled = true;
 
-    public ModeController(IPhoneLink link, ICursorPlacer cursor)
+    public ModeController(IPhoneLink link, ICursorPlacer cursor, EntryGuard? guard = null, Func<long>? clock = null)
     {
         _link = link;
         _cursor = cursor;
+        Guard = guard ?? EntryGuard.Default;
+        _clock = clock ?? (() => Environment.TickCount64);
     }
+
+    /// <summary>오진입 방지 값.</summary>
+    public EntryGuard Guard { get; set; }
 
     public InputMode Mode { get; private set; } = InputMode.Laptop;
     /// <summary>모드가 바뀔 때 발생 (UI 갱신용).</summary>
     public event Action<InputMode>? ModeChanged;
 
     /// <summary>
-    /// 폰이 있는 쪽. 폰 모드 중에 바꾸면 먼저 노트북으로 복귀한다(복귀 위치는 들어갈 때의 쪽).
+    /// 지금 모니터 구성의 폰 자리. 폰 모드 중에 바꾸면 먼저 노트북으로 복귀한다(복귀 위치는 들어갈 때의 폰 자리).
     /// </summary>
-    public PhoneSide Side
+    public ResolvedSlot? Slot
     {
-        get => _side;
+        get => _slot;
         set
         {
-            if (_side == value) return;
+            if (_slot == value) return;
             EmergencyExit();
-            _side = value;
+            _slot = value;
+            _pushed = 0;
         }
     }
 
@@ -89,10 +83,10 @@ public sealed class ModeController
     }
 
     /// <summary>
-    /// Raw Input 마우스 이동 한 건. edgeMonitor: <see cref="Side"/> 쪽 끝(오른쪽이면 가장 오른쪽, 왼쪽이면 가장 왼쪽)
-    /// 모니터에 커서가 있을 때 그 사각형, 아니면 null.
+    /// Raw Input 마우스 이동 한 건 (dx, dy 는 원시 카운트, cursor 는 이동 직전의 화면 좌표).
+    /// 폰 자리의 경계를 바깥으로 밀어 오진입 방지를 통과하면 폰 모드로 들어간다.
     /// </summary>
-    public void OnRawMove(int dx, int dy, int cursorX, int cursorY, ScreenRect? edgeMonitor)
+    public void OnRawMove(int dx, int dy, int cursorX, int cursorY)
     {
         if (Mode == InputMode.Phone)
         {
@@ -100,13 +94,36 @@ public sealed class ModeController
             return;
         }
 
-        if (_enabled && edgeMonitor is { } m
-            && (_side == PhoneSide.Right ? dx > 0 && cursorX >= m.Right - 1 : dx < 0 && cursorX <= m.Left)
+        if (!_enabled || _slot is not { } s) { _pushed = 0; return; }
+        var m = s.Monitor;
+        bool vertical = s.Side is PhoneSide.Right or PhoneSide.Left;
+        int along = vertical ? cursorY : cursorX;
+        bool onEdge = s.Side switch
+        {
+            PhoneSide.Right => cursorX >= m.Right - 1,
+            PhoneSide.Left => cursorX <= m.Left,
+            PhoneSide.Top => cursorY <= m.Top,
+            _ => cursorY >= m.Bottom - 1,
+        };
+        int corner = (int)Math.Round(Guard.CornerRatio * s.SpanLength);
+        bool inSpan = along >= s.SpanStart + corner && along < s.SpanEnd - corner;
+        if (!onEdge || !inSpan) { _pushed = 0; return; }
+
+        int outward = s.Side switch { PhoneSide.Right => dx, PhoneSide.Left => -dx, PhoneSide.Top => -dy, _ => dy };
+        if (outward < 0) { _pushed = 0; return; }   // 반대로 움직이면 처음부터
+        if (outward == 0) return;                   // 변을 따라 미끄러지는 움직임은 누적을 그대로 둔다
+
+        long now = _clock();
+        if (now - _lastPushTick > Guard.IdleResetMs) _pushed = 0;
+        _lastPushTick = now;
+        _pushed += outward;
+
+        if (_pushed >= Guard.PushCounts
             && _windowsButtons == PhoneMouseButtons.None
             && _link.State == PhoneLinkState.Ready)
         {
-            double y = m.Height <= 1 ? 0 : (double)(cursorY - m.Top) / (m.Height - 1);
-            Enter(m, Math.Clamp(y, 0.0, 1.0));
+            double ratio = s.SpanLength <= 1 ? 0 : (double)(along - s.SpanStart) / (s.SpanLength - 1);
+            Enter(s, Math.Clamp(ratio, 0.0, 1.0));
         }
     }
 
@@ -196,10 +213,19 @@ public sealed class ModeController
         PlaceCursor(Math.Clamp(yRatio, 0.0, 1.0));
     }
 
-    private void PlaceCursor(double yRatio)
+    /// <summary>들어갈 때의 폰 자리에서 같은 비율 위치, 모니터 안쪽 <see cref="ReturnInset"/> 에 커서를 놓는다.</summary>
+    private void PlaceCursor(double ratio)
     {
-        if (_entrySide == PhoneSide.Left) _cursor.PlaceAtLeftEdge(_entryMonitor, yRatio);
-        else _cursor.PlaceAtRightEdge(_entryMonitor, yRatio);
+        var s = _entrySlot;
+        var m = s.Monitor;
+        int along = s.SpanStart + (int)Math.Round(ratio * Math.Max(0, s.SpanLength - 1));
+        switch (s.Side)
+        {
+            case PhoneSide.Right: _cursor.PlaceAt(m.Right - 1 - ReturnInset, along); break;
+            case PhoneSide.Left: _cursor.PlaceAt(m.Left + ReturnInset, along); break;
+            case PhoneSide.Top: _cursor.PlaceAt(along, m.Top + ReturnInset); break;
+            default: _cursor.PlaceAt(along, m.Bottom - 1 - ReturnInset); break;
+        }
     }
 
     /// <summary>비상 복귀: 폰 커서 위치와 무관하게 즉시 노트북 모드로. 폰 모드가 아니면 아무 일도 없다.</summary>
@@ -210,18 +236,17 @@ public sealed class ModeController
         PlaceCursor(_lastYRatio);
     }
 
-    private void Enter(ScreenRect monitor, double yRatio)
+    private void Enter(ResolvedSlot slot, double ratio)
     {
-        _entryMonitor = monitor;
-        _entrySide = _side;
-        _lastYRatio = yRatio;
+        _entrySlot = slot;
+        _lastYRatio = ratio;
+        _pushed = 0;
         _phoneKeys.Clear();
         _phoneButtons = PhoneMouseButtons.None;
         _phoneDownVks.Clear();
         _swallowedUp = PhoneMouseButtons.None;
         Mode = InputMode.Phone;
-        // 폰을 오른쪽에 두면 폰의 왼쪽 끝으로, 왼쪽에 두면 폰의 오른쪽 끝으로 들어간다.
-        _link.Enter(yRatio, _entrySide == PhoneSide.Left ? PhoneEntryEdge.Right : PhoneEntryEdge.Left);
+        _link.Enter(ratio, PhoneSides.EntryEdge(slot.Side));   // 비율은 폰 자리 구간 안의 상대 위치 = 진입 경계를 따른 위치
         ModeChanged?.Invoke(Mode);
     }
 

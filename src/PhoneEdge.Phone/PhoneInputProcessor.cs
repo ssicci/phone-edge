@@ -32,11 +32,11 @@ internal sealed class PhoneInputProcessor(Action<byte[]> send, Action<double> ex
         send(ControlMessages.UhidCreate(HidReports.MouseId, 0, 0, MouseName, HidReports.MouseDescriptor));
     }
 
-    public void Enter(double yRatio, PhoneEntryEdge edge = PhoneEntryEdge.Left)
+    public void Enter(double ratio, PhoneEntryEdge edge = PhoneEntryEdge.Left)
     {
         InPhoneMode = true;
         _buttons = PhoneMouseButtons.None;
-        Home(yRatio, edge);
+        Home(ratio, edge);
     }
 
     public void Leave()
@@ -70,11 +70,11 @@ internal sealed class PhoneInputProcessor(Action<byte[]> send, Action<double> ex
         send(ControlMessages.UhidInput(HidReports.KeyboardId, HidReports.Keyboard(modifiers, keys)));
     }
 
-    /// <summary>화면 크기 변경. 폰 모드 중이면 같은 높이 비율로 진입 가장자리(좌/우)에 다시 기준을 맞춘다.</summary>
+    /// <summary>화면 크기 변경. 폰 모드 중이면 같은 가장자리 비율로 진입 가장자리(4방향)에 다시 기준을 맞춘다.</summary>
     public void Resize(int width, int height)
     {
         if (Tracker.SetScreen(width, height) && InPhoneMode)
-            Home(Tracker.YRatio, Tracker.Edge);
+            Home(Tracker.EdgeRatio, Tracker.Edge);
     }
 
     /// <summary>이득 측정 1단계: 폰 모드 밖에서 커서를 좌상단에 붙인다.</summary>
@@ -101,9 +101,9 @@ internal sealed class PhoneInputProcessor(Action<byte[]> send, Action<double> ex
         Tracker.Leave();
     }
 
-    private void Home(double yRatio, PhoneEntryEdge edge)
+    private void Home(double ratio, PhoneEntryEdge edge)
     {
-        var moves = Tracker.Enter(yRatio, edge);
+        var moves = Tracker.Enter(ratio, edge);
         for (int i = 0; i < moves.Count; i++)
         {
             if (i > 0 && HomeSettleMs > 0) pause?.Invoke(HomeSettleMs);

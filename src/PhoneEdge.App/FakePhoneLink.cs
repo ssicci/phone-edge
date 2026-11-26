@@ -94,8 +94,14 @@ public sealed class FakePhoneLink : IPhoneLink
             if (_state != PhoneLinkState.Ready) return;
             _inPhone = true;
             _edge = edge;
-            _x = edge == PhoneEntryEdge.Right ? ScreenWidth - 1 : 0;
-            _y = Math.Clamp(yRatio, 0, 1) * (ScreenHeight - 1);
+            double r = Math.Clamp(yRatio, 0, 1);   // 진입 경계를 따라가는 비율 (좌·우 변은 위→아래, 위·아래 변은 왼쪽→오른쪽)
+            (_x, _y) = edge switch
+            {
+                PhoneEntryEdge.Right => (ScreenWidth - 1.0, r * (ScreenHeight - 1)),
+                PhoneEntryEdge.Top => (r * (ScreenWidth - 1), 0.0),
+                PhoneEntryEdge.Bottom => (r * (ScreenWidth - 1), ScreenHeight - 1.0),
+                _ => (0.0, r * (ScreenHeight - 1)),
+            };
             _log($"[fake] Enter yRatio={yRatio:F3} → 폰 커서 ({_x:F0},{_y:F0})");
         }
     }
@@ -116,14 +122,22 @@ public sealed class FakePhoneLink : IPhoneLink
         lock (_gate)
         {
             if (_state != PhoneLinkState.Ready || !_inPhone) return;
-            // 들어온 가장자리를 바깥으로 넘으면 ExitRequested, 반대쪽은 화면 끝에서 멈춘다.
-            _x = _edge == PhoneEntryEdge.Right ? Math.Max(_x + dx, 0) : Math.Min(_x + dx, ScreenWidth - 1);
-            _y = Math.Clamp(_y + dy, 0, ScreenHeight - 1);
+            // 들어온 가장자리를 바깥으로 넘으면 ExitRequested, 나머지 가장자리는 화면 끝에서 멈춘다.
+            double nx = _x + dx, ny = _y + dy;
+            bool crossed = _edge switch
+            {
+                PhoneEntryEdge.Right => nx > ScreenWidth - 1,
+                PhoneEntryEdge.Top => ny < 0,
+                PhoneEntryEdge.Bottom => ny > ScreenHeight - 1,
+                _ => nx < 0,
+            };
+            _x = Math.Clamp(nx, 0, ScreenWidth - 1);
+            _y = Math.Clamp(ny, 0, ScreenHeight - 1);
             _log($"[fake] 마우스 dx={dx} dy={dy} buttons={buttons} wheel={wheel} → ({_x:F0},{_y:F0})");
-            if (_edge == PhoneEntryEdge.Right ? _x > ScreenWidth - 1 : _x < 0)
+            if (crossed)
             {
                 _inPhone = false;
-                exitY = _y / (ScreenHeight - 1);
+                exitY = _edge is PhoneEntryEdge.Top or PhoneEntryEdge.Bottom ? _x / (ScreenWidth - 1) : _y / (ScreenHeight - 1);
             }
         }
         if (exitY is { } y)

@@ -22,10 +22,8 @@ internal sealed class StubLink : IPhoneLink
 
 internal sealed class StubCursor : ICursorPlacer
 {
-    public List<double> Placed = new();
-    public void PlaceAtRightEdge(ScreenRect m, double y) => Placed.Add(y);
-    public List<double> PlacedLeft = new();
-    public void PlaceAtLeftEdge(ScreenRect m, double y) => PlacedLeft.Add(y);
+    public List<(int X, int Y)> Placed = new();
+    public void PlaceAt(int x, int y) => Placed.Add((x, y));
 }
 
 public class ModeControllerTests
@@ -35,9 +33,10 @@ public class ModeControllerTests
     private readonly StubCursor _cursor = new();
     private readonly ModeController _c;
 
-    public ModeControllerTests() => _c = new ModeController(_link, _cursor);
+    // 방지 장치 없음(EntryGuard.None): 이 파일의 테스트는 경계에 닿아 한 번 밀면 진입한다는 기본 동작을 본다. 방지 장치는 EntryGuardTests.
+    public ModeControllerTests() => _c = new ModeController(_link, _cursor, EntryGuard.None) { Slot = new ResolvedSlot(Mon, PhoneSide.Right, 0, 1081) };
 
-    private void PushRight(int y = 540) => _c.OnRawMove(5, 0, 1919, y, Mon);
+    private void PushRight(int y = 540) => _c.OnRawMove(5, 0, 1919, y);
 
     [Fact]
     public void EntersPhoneModeWhenPushingPastRightEdge()
@@ -48,12 +47,14 @@ public class ModeControllerTests
     }
 
     [Fact]
-    public void DoesNotEnterWhenNotAtEdgeMovingLeftNotReadyOrNotRightmostMonitor()
+    public void DoesNotEnterWhenNotAtEdgeMovingAwayNotReadyOrWithoutSlot()
     {
-        _c.OnRawMove(5, 0, 1000, 540, Mon);
-        _c.OnRawMove(-5, 0, 1919, 540, Mon);
-        _c.OnRawMove(5, 0, 1919, 540, null);
+        _c.OnRawMove(5, 0, 1000, 540);
+        _c.OnRawMove(-5, 0, 1919, 540);
         _link.State = PhoneLinkState.Connecting;
+        PushRight();
+        _link.State = PhoneLinkState.Ready;
+        _c.Slot = null;   // 폰 자리가 없으면 진입하지 않는다
         PushRight();
         Assert.Equal(InputMode.Laptop, _c.Mode);
         Assert.Empty(_link.Calls);
@@ -75,7 +76,7 @@ public class ModeControllerTests
     public void PhoneModeForwardsMouseAndSwallowsHookInput()
     {
         PushRight();
-        _c.OnRawMove(3, -2, 1919, 540, Mon);
+        _c.OnRawMove(3, -2, 1919, 540);
         Assert.True(_c.OnHookMouseMove());
         Assert.True(_c.OnMouseButton(PhoneMouseButtons.Left, true));
         Assert.True(_c.OnWheel(2));
@@ -91,7 +92,7 @@ public class ModeControllerTests
         _c.OnExitRequested(0.25);
         Assert.Equal(InputMode.Laptop, _c.Mode);
         Assert.Equal("Leave", _link.Calls[^1]);
-        Assert.Equal(0.25, _cursor.Placed[0]);
+        Assert.Equal((1920 - 1 - ModeController.ReturnInset, 270), _cursor.Placed[0]);   // 0.25 × 1080
         Assert.False(_c.OnHookMouseMove());
     }
 

@@ -56,6 +56,6 @@
 
   <!-- cable -->
   <path class="cable" d="M260 278 C260 322 668 322 668 276"/>
-  <text class="muted" x="440" y="20" text-anchor="middle">폰이 왼쪽에 있으면 방향이 반대입니다.</text>
+  <text class="muted" x="440" y="20" text-anchor="middle">폰이 다른 쪽이면 “폰 위치 설정…”에서 정하세요.</text>
   <text class="muted" x="464" y="328" text-anchor="middle">USB 케이블</text>
 </svg>

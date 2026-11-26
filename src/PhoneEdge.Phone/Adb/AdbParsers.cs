@@ -75,6 +75,29 @@ public static partial class AdbParsers
         return true;
     }
 
+    /// <summary>마우스 viewport 줄의 회전값 (0~3, 90° 단위). 없으면 null.</summary>
+    public static int? ParseMouseOrientation(string text)
+    {
+        var m = ViewportOrientationRegex().Match(text);
+        return m.Success ? int.Parse(m.Groups[1].Value, CultureInfo.InvariantCulture) : null;
+    }
+
+    /// <summary>
+    /// 호버 위치(회전 전 자연 방향 좌표)를 화면 좌표로 바꾼다. width/height 는 viewport 의 논리(회전 후) 크기.
+    /// 연속 좌표 변환이라 "크기 − 1" 이 아니라 "크기 − 값" 이다. 폴드7 가로 화면 실측:
+    /// orientation 3 은 화면 (2519, 217) 이 (217, 1), orientation 1 은 화면 좌상단 (0, 0) 이 (1080, 0) 으로 보인다. 2 는 대칭 추정.
+    /// </summary>
+    public static (double X, double Y) HoverToScreen(double x, double y, int orientation, int width, int height) => orientation switch
+    {
+        1 => (y, height - x),
+        2 => (width - x, height - y),
+        3 => (width - y, x),
+        _ => (x, y),
+    };
+
+    [GeneratedRegex(@"viewport: Viewport \w+: displayId=-?\d+,.*?orientation=(\d)")]
+    private static partial Regex ViewportOrientationRegex();
+
     /// <summary>`dumpsys input` 의 "Mouse pointer acceleration enabled: true|false" (Android 16+). 없으면 null.</summary>
     public static bool? ParseMouseAccelerationEnabled(string text)
     {

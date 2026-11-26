@@ -132,7 +132,15 @@ Many banking and securities apps refuse to run while USB debugging is on, but Ph
 PhoneEdge installs it over USB and sets it up for you: it gives the app permission to change the USB debugging setting and excludes it from battery optimization. The app shows a permanent notification with the current state. You can uninstall it like any other app.</value></data>
   <data name="Companion_Done" xml:space="preserve"><value>The phone helper app is ready. It keeps a notification on the phone; if it stops after a while, set the app's battery usage to Unrestricted (see the README).</value></data>
   <data name="Companion_Failed" xml:space="preserve"><value>Could not install the phone helper app. Make sure the phone is unlocked and connected, then try again. The log file has the details.</value></data>
-  <data name="Menu_PhoneSide" xml:space="preserve"><value>Phone position</value></data>
-  <data name="Menu_PhoneSideRight" xml:space="preserve"><value>Right of the laptop</value></data>
-  <data name="Menu_PhoneSideLeft" xml:space="preserve"><value>Left of the laptop</value></data>
+  <data name="Menu_PhoneSlot" xml:space="preserve"><value>Phone position…</value></data>
+  <data name="Slot_Title" xml:space="preserve"><value>Phone position</value></data>
+  <data name="Slot_Hint" xml:space="preserve"><value>Drag the phone onto a free edge of a monitor (dashed lines). The whole free part of that edge leads to the phone.</value></data>
+  <data name="Slot_Remember" xml:space="preserve"><value>The position is remembered for this set of monitors; another desk with different monitors can have its own.</value></data>
+  <data name="Slot_FirstTime" xml:space="preserve"><value>These monitors are new to PhoneEdge. Choose where the phone sits.</value></data>
+  <data name="Slot_Phone" xml:space="preserve"><value>Phone</value></data>
+  <data name="Slot_Identify" xml:space="preserve"><value>Identify</value></data>
+  <data name="Slot_Save" xml:space="preserve"><value>Save</value></data>
+  <data name="Slot_Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="Toast_LayoutText" xml:space="preserve"><value>New monitor setup. Set where the phone sits.</value></data>
+  <data name="Toast_LayoutOpen" xml:space="preserve"><value>Set phone position</value></data>
 </root>

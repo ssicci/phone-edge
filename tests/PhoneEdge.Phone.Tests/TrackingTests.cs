@@ -157,6 +157,102 @@ public class TrackingTests
         Assert.False(t.Move(500, 0, false, out _));
     }
 
+    // ---- Top / Bottom entry edges, and all four edges together ----
+
+    [Fact]
+    public void Bottom_enter_homes_to_bottom_left_then_moves_right()
+    {
+        var t = NewTracker(gain: 2.0);
+        var moves = t.Enter(0.5, PhoneEntryEdge.Bottom);
+        Assert.Equal(2, moves.Count);
+        Assert.True(moves[0].Dx * 2.0 <= -2001 && moves[0].Dy * 2.0 >= 2001);
+        Assert.Equal((250L, 0L), moves[1]); // 499.5 px / gain 2 → 250 (반올림)
+        Assert.Equal(500, t.X);
+        Assert.Equal(2000, t.Y);
+        Assert.Equal(0.5, t.EdgeRatio, 2);
+    }
+
+    [Fact]
+    public void Top_enter_homes_to_top_left_then_moves_right()
+    {
+        var t = NewTracker();
+        var moves = t.Enter(0.25, PhoneEntryEdge.Top);
+        Assert.True(moves[0].Dx < -2001 && moves[0].Dy < -2001);
+        Assert.Equal((250L, 0L), moves[1]); // 0.25 × 999 = 249.75 → 250
+        Assert.Equal((250.0, 0.0), (t.X, t.Y));
+    }
+
+    // 바깥 방향 단위 벡터
+    public static TheoryData<PhoneEntryEdge, int, int> Edges => new()
+    {
+        { PhoneEntryEdge.Left, -1, 0 },
+        { PhoneEntryEdge.Right, 1, 0 },
+        { PhoneEntryEdge.Top, 0, -1 },
+        { PhoneEntryEdge.Bottom, 0, 1 },
+    };
+
+    [Theory, MemberData(nameof(Edges))]
+    public void Exit_threshold_on_every_edge_reports_ratio_along_edge(PhoneEntryEdge edge, int ox, int oy)
+    {
+        var t = NewTracker();
+        t.Enter(0.25, edge);
+        Assert.False(t.Move(10 * ox, 10 * oy, false, out _));
+        Assert.True(t.Move(10 * ox, 10 * oy, false, out double r));
+        Assert.Equal(0.25, r, 2);
+        Assert.False(t.Active);
+    }
+
+    [Theory, MemberData(nameof(Edges))]
+    public void Only_the_entry_edge_exits_and_inward_move_resets_push(PhoneEntryEdge edge, int ox, int oy)
+    {
+        var t = NewTracker();
+        t.Enter(0.5, edge);
+        // 다른 세 벽에 세게 밀어도 이탈 아님
+        foreach (var (x, y) in new[] { (-5000, 0), (5000, 0), (0, -5000), (0, 5000) })
+        {
+            if (x * ox + y * oy > 0) continue;
+            Assert.False(t.Move(x, y, false, out _));
+        }
+        t.Enter(0.5, edge);
+        t.Move(15 * ox, 15 * oy, false, out _);
+        t.Move(-ox, -oy, false, out _);                      // 안쪽으로 1 → 누적 초기화
+        Assert.False(t.Move(15 * ox, 15 * oy, false, out _)); // 14 < 20
+        Assert.True(t.Move(25 * ox, 25 * oy, false, out _));
+    }
+
+    [Theory, MemberData(nameof(Edges))]
+    public void No_exit_while_button_held_on_every_edge(PhoneEntryEdge edge, int ox, int oy)
+    {
+        var t = NewTracker();
+        t.Enter(0, edge);
+        Assert.False(t.Move(500 * ox, 500 * oy, true, out _));
+        Assert.True(t.Move(ox, oy, false, out _));
+    }
+
+    [Fact]
+    public void Calibration_gain_from_two_positions_ignores_rotation()
+    {
+        Assert.Equal(2.68, Calibration.GainFromMove((0, 0), (536, 0), 200, 2520)!.Value, 3);     // 세로
+        Assert.Equal(2.68, Calibration.GainFromMove((0, 2519), (0, 1983), 200, 2520)!.Value, 3); // 가로 (회전 전 좌표, 실측 형태)
+        Assert.Null(Calibration.GainFromMove((0, 0), (0, 0), 200, 2520));       // 안 움직임
+        Assert.Null(Calibration.GainFromMove((0, 0), (300, 300), 200, 2520));   // 구석 고정 실패
+        Assert.Null(Calibration.GainFromMove((0, 0), (1967, 0), 200, 1968));    // 벽에 막힘
+    }
+
+    [Theory]
+    [InlineData(0, 10, 20, 10, 20)]
+    [InlineData(3, 217, 1, 2519, 217)]   // 폴드7 가로 실측: 오른쪽 가장자리 y=217
+    [InlineData(1, 1080, 0, 0, 0)]       // 폴드7 가로 실측: 좌상단 구석
+    [InlineData(1, 1080, 535.9, 535.9, 0)] // 이득 측정 이동 뒤
+    [InlineData(2, 10, 20, 2510, 1060)]
+    public void HoverToScreen_maps_natural_to_rotated(int o, double hx, double hy, double sx, double sy)
+        => Assert.Equal((sx, sy), AdbParsers.HoverToScreen(hx, hy, o, 2520, 1080));
+
+    [Fact]
+    public void ParseMouseOrientation_reads_viewport()
+        => Assert.Equal(3, AdbParsers.ParseMouseOrientation(
+            "      viewport: Viewport INTERNAL: displayId=0, port=148, orientation=3, densityDpi=420 logicalFrame=[0, 0, 2520, 1080]"));
+
     // ---- PhoneInputProcessor (소켓 없이) ----
 
     private sealed class Sink
@@ -223,6 +319,26 @@ public class TrackingTests
         Assert.Equal(0.5, s.P.Tracker.YRatio, 2);
         s.P.Mouse(100, 0, PhoneMouseButtons.None, 0); // 새 폭 기준 오른쪽 벽을 넘어 이탈
         Assert.Single(s.Exits);
+    }
+
+    [Theory]
+    [InlineData(PhoneEntryEdge.Top, 2000, 1000)]
+    [InlineData(PhoneEntryEdge.Bottom, 2000, 1000)]
+    [InlineData(PhoneEntryEdge.Bottom, 600, 2400)]
+    [InlineData(PhoneEntryEdge.Left, 600, 2400)]
+    public void Processor_rehomes_on_resize_keeping_edge_and_ratio(PhoneEntryEdge edge, int w, int h)
+    {
+        var s = new Sink();
+        s.P.Enter(0.3, edge);
+        s.Sent.Clear();
+        s.P.Resize(w, h);
+        Assert.NotEmpty(s.Sent);
+        var t = s.P.Tracker;
+        Assert.Equal(edge, t.Edge);
+        Assert.Equal(0.3, t.EdgeRatio, 2);
+        double wallX = edge switch { PhoneEntryEdge.Left => 0, PhoneEntryEdge.Right => w - 1, _ => t.X };
+        double wallY = edge switch { PhoneEntryEdge.Top => 0, PhoneEntryEdge.Bottom => h - 1, _ => t.Y };
+        Assert.Equal((wallX, wallY), (t.X, t.Y));
     }
 
     [Fact]

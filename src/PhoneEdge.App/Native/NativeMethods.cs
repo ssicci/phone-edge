@@ -60,3 +60,13 @@ internal static class NativeMethods
     [DllImport("kernel32.dll")]
     public static extern bool AttachConsole(int pid);
 }
+
+/// <summary>창을 물리 픽셀 좌표로 놓는다 (모니터마다 화면 배율이 달라도 위치·크기가 어긋나지 않게).</summary>
+internal static class NativeBounds
+{
+    public static void Set(IntPtr hwnd, int x, int y, int w, int h)
+        => SetWindowPos(hwnd, new IntPtr(-1), x, y, w, h, 0x0010 | 0x0040);   // HWND_TOPMOST, SWP_NOACTIVATE | SWP_SHOWWINDOW
+
+    [System.Runtime.InteropServices.DllImport("user32.dll")]
+    private static extern bool SetWindowPos(IntPtr hWnd, IntPtr after, int x, int y, int cx, int cy, uint flags);
+}

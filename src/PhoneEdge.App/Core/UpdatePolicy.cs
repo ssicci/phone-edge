@@ -104,15 +104,50 @@ public sealed class SettingsStore
         public bool? DisableUsbDebuggingOnExit { get; set; }
         /// <summary>마지막으로 확인했을 때 폰에 도우미 앱이 있었는지.</summary>
         public bool? CompanionPresent { get; set; }
-        /// <summary>폰이 있는 쪽. "right"(기본) / "left".</summary>
+        /// <summary>0.6 의 폰 위치("right"/"left"). 0.7 은 처음 실행할 때 프로필로 옮기고 지운다.</summary>
         public string? PhoneSide { get; set; }
+        /// <summary>모니터 구성마다 기억한 폰 자리.</summary>
+        public List<LayoutProfile>? Profiles { get; set; }
+        /// <summary>오진입 방지 값. 없으면 기본값 (<see cref="EntryGuard.Default"/>).</summary>
+        public EntryGuardData? EntryGuard { get; set; }
     }
 
-    /// <summary>폰을 노트북의 어느 쪽에 두는지. 없거나 알 수 없는 값이면 오른쪽.</summary>
-    public PhoneSide PhoneSide
+    /// <summary>settings.json 의 EntryGuard. 빠진 값은 기본값을 쓴다.</summary>
+    public sealed class EntryGuardData
     {
-        get => PhoneSides.Parse(Read().PhoneSide);
-        set { var d = Read(); d.PhoneSide = PhoneSides.ToText(value); Write(d); }
+        public double? CornerRatio { get; set; }
+        public int? PushCounts { get; set; }
+        public int? IdleResetMs { get; set; }
+    }
+
+    /// <summary>0.6 의 폰 위치 설정 값 (없으면 null). 프로필로 옮긴 뒤에는 <see cref="ClearLegacyPhoneSide"/> 로 지운다.</summary>
+    public string? LegacyPhoneSide => Read().PhoneSide;
+
+    public void ClearLegacyPhoneSide() { var d = Read(); if (d.PhoneSide == null) return; d.PhoneSide = null; Write(d); }
+
+    /// <summary>저장된 배치 프로필 목록 (복사본).</summary>
+    public List<LayoutProfile> Profiles => Read().Profiles ?? new();
+
+    /// <summary>같은 모니터 구성 키의 프로필을 바꾸거나 추가한다.</summary>
+    public void SaveProfile(LayoutProfile profile)
+    {
+        var d = Read();
+        var list = d.Profiles ?? new();
+        list.RemoveAll(p => p.Key == profile.Key);
+        list.Add(profile);
+        d.Profiles = list;
+        Write(d);
+    }
+
+    /// <summary>오진입 방지 값: settings.json 에서 바꾼 값이 있으면 그것(허용 범위로 맞춤), 없으면 기본값.</summary>
+    public EntryGuard Guard
+    {
+        get
+        {
+            var g = Read().EntryGuard;
+            var def = EntryGuard.Default;
+            return g == null ? def : new EntryGuard(g.CornerRatio ?? def.CornerRatio, g.PushCounts ?? def.PushCounts, g.IdleResetMs ?? def.IdleResetMs).Clamped();
+        }
     }
 
     /// <summary>

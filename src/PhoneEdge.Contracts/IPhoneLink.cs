@@ -12,13 +12,18 @@ public enum PhoneLinkState
 }
 
 /// <summary>
-/// 폰 모드에 들어갈 때 폰 커서가 나타나는 폰 화면의 가장자리 (진입 경계).
-/// 폰이 노트북 오른쪽에 있으면 Left, 왼쪽에 있으면 Right. 같은 가장자리를 다시 넘으면 노트북으로 돌아온다.
+/// 폰 모드에 들어갈 때 폰 커서가 나타나는 폰 화면의 가장자리 (진입 경계, 노트북 쪽을 향한 변).
+/// 폰 자리가 모니터의 오른쪽이면 Left, 왼쪽이면 Right, 위쪽이면 Bottom, 아래쪽이면 Top.
+/// 같은 가장자리를 다시 넘으면 노트북으로 돌아온다.
 /// </summary>
 public enum PhoneEntryEdge
 {
     Left,
     Right,
+    /// <summary>폰 화면 위쪽 변 (폰이 모니터 아래에 있을 때).</summary>
+    Top,
+    /// <summary>폰 화면 아래쪽 변 (폰이 모니터 위에 있을 때).</summary>
+    Bottom,
 }
 
 [Flags]
@@ -52,7 +57,8 @@ public interface IPhoneLink : IAsyncDisposable
 
     /// <summary>
     /// 폰 커서가 진입 경계를 넘어 나가려 할 때 발생 (노트북 모드로 복귀 요청).
-    /// 인자는 나간 지점의 높이 비율: 0.0 = 화면 맨 위, 1.0 = 맨 아래.
+    /// 인자는 진입 경계를 따라 나간 지점의 비율: Left/Right 경계면 0.0 = 화면 맨 위, 1.0 = 맨 아래,
+    /// Top/Bottom 경계면 0.0 = 화면 맨 왼쪽, 1.0 = 맨 오른쪽.
     /// 발생 후 구현은 스스로 Leave 상태가 된다.
     /// </summary>
     event Action<double>? ExitRequested;
@@ -91,7 +97,8 @@ public interface IPhoneLink : IAsyncDisposable
     void Enter(double yRatio);
 
     /// <summary>
-    /// 폰 모드 진입. 폰 커서를 <paramref name="edge"/> 가장자리의 높이 비율 <paramref name="yRatio"/> 위치에 놓고,
+    /// 폰 모드 진입. 폰 커서를 <paramref name="edge"/> 가장자리를 따라 비율 <paramref name="yRatio"/> 위치에 놓고
+    /// (Left/Right 는 위→아래, Top/Bottom 은 왼쪽→오른쪽 비율),
     /// 이후 같은 가장자리를 바깥으로 넘으려 하면 <see cref="ExitRequested"/> 를 발생시킨다.
     /// 기본 구현은 Left 만 지원한다 (기존 <see cref="Enter(double)"/>).
     /// </summary>

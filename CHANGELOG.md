@@ -3,6 +3,26 @@
 Each version has a `## [X.Y.Z] - date` entry: the English notes first, then a `---` line and the Korean notes. `## [Unreleased]` collects the changes for the next release; `scripts/release.ps1 X.Y.Z` renames it to the new version and date. The app's update window (current language only) and the GitHub release notes show the entry as written (the app UI is available in Korean and English).
 버전마다 `## [X.Y.Z] - 날짜` 항목을 두고, 영문 설명 다음에 `---` 줄과 한글 설명을 씁니다. `## [Unreleased]`에는 다음 릴리스의 변경 내용을 모아 두고, `scripts/release.ps1 X.Y.Z`가 이를 새 버전과 날짜로 바꿉니다. 업데이트 창에는 현재 언어 부분만, GitHub 릴리스 노트에는 이 내용이 그대로 나옵니다.
 
+## [0.7.0] - 2026-11-26
+
+### Added
+- **Phone position window** (tray menu → **Phone position…**): the phone can now be on any of the four sides of your monitors, not only to the right or left. The window draws your monitors as numbered boxes; drag the phone onto a free edge and it snaps to the whole free part of that edge. An edge that touches another monitor cannot be used, and with monitors of different size only the untouched part is offered. **Identify** shows a big number on each monitor for 2 seconds.
+- The phone position is remembered **per set of monitors** (for example office and home). Monitors are recognized by the identity they report (model and serial number), so a changed resolution or port does not matter. A set PhoneEdge has not seen before starts with the default (right edge of the rightmost monitor) and shows a notification asking you to set the position; if notifications are off, the window opens by itself. The 0.6 left/right choice is carried over to your current monitors.
+- **Accidental entry guard:** the ends of the phone position (10% each) no longer enter phone mode, so window close buttons, the Start button and taskbar corners keep working, and you must push about 120 mouse counts past the edge (moving back, or pausing for half a second, starts over). The values can be changed with `EntryGuard` in `settings.json`.
+
+### Changed
+- When the monitors change (plugging, unplugging, rearranging), PhoneEdge returns to the laptop first and picks the position for the new set of monitors. The tray menu's **Phone position** submenu (right/left) is replaced by the window above.
+
+---
+
+### 추가
+- **폰 위치 설정 창**(트레이 메뉴 → **폰 위치 설정…**): 이제 폰을 오른쪽·왼쪽뿐 아니라 모니터의 네 방향 어디에나 둘 수 있습니다. 창은 모니터를 번호가 붙은 상자로 그려 주고, 폰을 빈 가장자리로 끌면 그 가장자리의 빈 구간 전체에 붙습니다. 다른 모니터와 맞닿은 가장자리는 쓸 수 없고, 모니터 크기가 다르면 닿지 않은 부분만 고를 수 있습니다. **식별**을 누르면 각 모니터에 큰 번호를 2초간 띄웁니다.
+- 폰 위치는 **모니터 구성마다**(예: 회사와 집) 기억합니다. 모니터가 알리는 정보(모델과 시리얼 번호)로 모니터를 알아보므로 해상도나 연결 포트가 바뀌어도 상관없습니다. PhoneEdge가 처음 보는 구성은 기본값(가장 오른쪽 모니터의 오른쪽 끝)으로 시작하고, 폰 위치를 정해 달라는 알림을 띄웁니다(알림이 꺼져 있으면 설정 창이 바로 열립니다). 0.6의 왼쪽/오른쪽 선택은 현재 모니터 구성으로 이전됩니다.
+- **오진입 방지:** 폰 자리 양 끝(각 10%)에서는 폰 모드로 들어가지 않아 창 닫기 단추, 시작 단추, 작업 표시줄 모서리가 그대로 동작하고, 가장자리를 넘어 마우스 카운트를 약 120만큼 더 밀어야 들어갑니다(반대로 움직이거나 0.5초 멈추면 처음부터). `settings.json`의 `EntryGuard`로 값을 바꿀 수 있습니다.
+
+### 변경
+- 모니터가 바뀌면(꽂기·뽑기·배치 변경) PhoneEdge가 먼저 노트북으로 돌아오고, 새 모니터 구성의 폰 위치를 고릅니다. 트레이 메뉴의 **폰 위치** 하위 메뉴(오른쪽/왼쪽)는 위 설정 창으로 바뀌었습니다.
+
 ## [0.6.1] - 2026-11-26
 
 ### Fixed

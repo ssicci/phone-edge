@@ -7,6 +7,7 @@ using PhoneEdge.Contracts;
 using PhoneEdge.Phone.Adb;
 using PhoneEdge.Phone.Companion;
 using PhoneEdge.Phone.Diagnostics;
+using PhoneEdge.Phone.Tracking;
 
 namespace PhoneEdge.Phone;
 
@@ -349,9 +350,9 @@ public sealed class AdbPhoneLink : IPhoneLink
 
     public void Enter(double yRatio) => Enter(yRatio, PhoneEntryEdge.Left);
 
-    public void Enter(double yRatio, PhoneEntryEdge edge)
+    public void Enter(double ratio, PhoneEntryEdge edge)
     {
-        if (State == PhoneLinkState.Ready) _queue.Writer.TryWrite(new Cmd(CmdKind.Enter) { Y = yRatio, A = (int)edge });
+        if (State == PhoneLinkState.Ready) _queue.Writer.TryWrite(new Cmd(CmdKind.Enter) { Y = ratio, A = (int)edge });
     }
 
     public void Leave()
@@ -629,7 +630,7 @@ public sealed class AdbPhoneLink : IPhoneLink
     }
 
     /// <summary>
-    /// 이득 자동 측정: 좌상단에 붙인 뒤 CalibrationCounts 를 한 리포트로 보내고 실제 포인터 x 를 읽는다.
+    /// 이득 자동 측정: 좌상단에 붙인 뒤 CalibrationCounts 를 한 리포트로 보내고, 전후 실제 포인터 위치의 거리를 잰다.
     /// 단일 리포트는 가속이 붙지 않으므로 가속 설정과 무관하게 기본 이득이 나온다.
     /// </summary>
     private async Task CalibrateAsync(Session s, int width, CancellationToken ct)
@@ -637,16 +638,21 @@ public sealed class AdbPhoneLink : IPhoneLink
         int counts = _options.CalibrationCounts;
         _queue.Writer.TryWrite(new Cmd(CmdKind.CalibrateHome));
         await Task.Delay(600, ct).ConfigureAwait(false); // 가속 속도 추정이 식을 때까지
+        // 회전된 화면에서는 호버 좌표가 회전 전 기준이므로, 구석 위치와 이동 뒤 위치를 둘 다 읽어 거리로 잰다.
+        var (_, before) = await _adb.RunAsync(["-s", s.Serial, "shell", "dumpsys input | grep -m1 'MOUSE) at'"], TimeSpan.FromSeconds(10), ct).ConfigureAwait(false);
         _queue.Writer.TryWrite(new Cmd(CmdKind.CalibrateStep) { A = counts });
         await Task.Delay(400, ct).ConfigureAwait(false);
         var (_, line) = await _adb.RunAsync(["-s", s.Serial, "shell", "dumpsys input | grep -m1 'MOUSE) at'"], TimeSpan.FromSeconds(10), ct).ConfigureAwait(false);
-        if (AdbParsers.TryParseMousePosition(line, out double x, out _) && x > 0 && (width == 0 || x < width - 1))
+        bool b0 = AdbParsers.TryParseMousePosition(before, out double x0, out double y0);
+        bool b1 = AdbParsers.TryParseMousePosition(line, out double x1, out double y1);
+        double? gain = b0 && b1 ? Calibration.GainFromMove((x0, y0), (x1, y1), counts, width) : null;
+        if (gain is double g)
         {
-            MeasuredGain = x / counts;
-            _queue.Writer.TryWrite(new Cmd(CmdKind.SetGain) { Y = MeasuredGain.Value });
-            _adb.Log($"커서 이득 측정: {counts} 카운트 → {x:F1} px, 이득 {MeasuredGain:F3}");
+            MeasuredGain = g;
+            _queue.Writer.TryWrite(new Cmd(CmdKind.SetGain) { Y = g });
+            _adb.Log($"커서 이득 측정: {counts} 카운트, ({x0:F1}, {y0:F1}) → ({x1:F1}, {y1:F1}), 이득 {g:F3}");
         }
-        else _adb.Log($"커서 이득 측정 실패, 설정값 {_options.CursorGain} 사용 ({line.Trim()})");
+        else _adb.Log($"커서 이득 측정 실패, 설정값 {_options.CursorGain} 사용 (전 {before.Trim()} / 후 {line.Trim()})");
     }
 
     private static bool HasInputDevices(string dump)

@@ -77,6 +77,26 @@ internal sealed class WindowsToast
         }
     }
 
+    /// <summary>처음 보는 모니터 구성 안내 알림. 알림이 꺼져 있거나 실패하면 false (호출자가 설정 창을 직접 띄운다).</summary>
+    public bool ShowLayoutPrompt()
+    {
+        try
+        {
+            if (_notifier.Setting != NotificationSetting.Enabled) return false;
+            var doc = new XmlDocument();
+            doc.LoadXml(ToastXml.ForLayoutPrompt());
+            var toast = new ToastNotification(doc) { Tag = "layout", Group = Group };
+            toast.Activated += (_, e) => Activated?.Invoke((e as ToastActivatedEventArgs)?.Arguments ?? ToastXml.Layout);
+            _notifier.Show(toast);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Logger.Info("레이아웃 안내 알림 실패: " + ex.Message);
+            return false;
+        }
+    }
+
     /// <summary>문제가 풀리면 알림 센터에 남은 문제 알림을 지운다.</summary>
     public void ClearProblem()
     {

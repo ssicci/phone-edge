@@ -68,7 +68,9 @@ Console.WriteLine("폰 연결 대기 (USB 디버깅 허용 필요)...");
 await ready.Task.WaitAsync(TimeSpan.FromMinutes(2));
 Console.WriteLine($"Ready, 화면 {link.ScreenSize}, 이득 {link.MeasuredGain}, 가속 {link.MouseAccelerationEnabled}");
 gain = link.MeasuredGain ?? gain;
-var edge = args.Contains("right") ? PhoneEntryEdge.Right : PhoneEntryEdge.Left;
+var edge = args.Contains("right") ? PhoneEntryEdge.Right : args.Contains("top") ? PhoneEntryEdge.Top
+         : args.Contains("bottom") ? PhoneEntryEdge.Bottom : PhoneEntryEdge.Left;
+bool vertical = edge is PhoneEntryEdge.Top or PhoneEntryEdge.Bottom;
 
 switch (mode)
 {
@@ -151,31 +153,34 @@ switch (mode)
         break;
     }
 
-    case "enter": // Enter(y) 후 실제 포인터 위치 확인: enter <gain> [right]
+    case "enter": // Enter(r, edge) 후 실제 포인터 위치(화면 좌표로 변환) 확인: enter <gain> [right|top|bottom]
         foreach (double r in new[] { 0.2, 0.5, 0.8 })
         {
             link.Enter(r, edge);
             await Task.Delay(500);
-            string line = await RunAdb("shell \"dumpsys input | grep -m1 'MOUSE) at'\"");
-            PhoneEdge.Phone.Adb.AdbParsers.TryParseMousePosition(line, out double px, out double py);
-            double ex = edge == PhoneEntryEdge.Right ? link.ScreenSize.Width - 1 : 0;
-            Console.WriteLine($"Enter({r}, {edge}) → 실제 ({px:F0}, {py:F0}), 기대 ({ex:F0}, {r * (link.ScreenSize.Height - 1):F0})");
+            var (px, py) = await ScreenPointer();
+            int w = link.ScreenSize.Width, h = link.ScreenSize.Height;
+            double ex = edge switch { PhoneEntryEdge.Right => w - 1, PhoneEntryEdge.Left => 0, _ => r * (w - 1) };
+            double ey = edge switch { PhoneEntryEdge.Bottom => h - 1, PhoneEntryEdge.Top => 0, _ => r * (h - 1) };
+            Console.WriteLine($"Enter({r}, {edge}) → 실제 ({px:F0}, {py:F0}), 기대 ({ex:F0}, {ey:F0})");
             link.Leave();
         }
         break;
 
-    case "exit": // exit <gain> [right]: 안쪽으로 400 이동 후 진입 가장자리 쪽으로 2 카운트씩 밀어 이탈 카운트를 잰다
+    case "exit": // exit <gain> [right|top|bottom]: 안쪽으로 이동 후 진입 가장자리 쪽으로 2 카운트씩 밀어 이탈 카운트를 잰다
     {
-        int inward = edge == PhoneEntryEdge.Right ? -1 : 1;
+        int outward = edge is PhoneEntryEdge.Right or PhoneEntryEdge.Bottom ? 1 : -1;
+        int axisLen = vertical ? link.ScreenSize.Height : link.ScreenSize.Width;
+        int inward = Math.Min(400, (int)(axisLen * 0.6 / gain) / 10 * 10); // 반대쪽 벽에 닿지 않게
         link.Enter(0.5, edge);
         await Task.Delay(300);
-        for (int i = 0; i < 40; i++) { link.SendMouse(10 * inward, 0, 0, 0); await Task.Delay(8); }
+        void Push(int c) { if (vertical) link.SendMouse(0, c, 0, 0); else link.SendMouse(c, 0, 0, 0); }
+        for (int i = 0; i < inward / 10; i++) { Push(-10 * outward); await Task.Delay(8); }
         await Task.Delay(300);
-        string mid = await RunAdb("shell \"dumpsys input | grep -m1 'MOUSE) at'\"");
-        PhoneEdge.Phone.Adb.AdbParsers.TryParseMousePosition(mid, out double mx, out _);
+        var (mx, my) = await ScreenPointer();
         int pushed = 0;
-        while (exitY == null && pushed < 2000) { link.SendMouse(-2 * inward, 0, 0, 0); pushed += 2; await Task.Delay(8); }
-        Console.WriteLine($"{edge}: 안쪽 400 (실제 x={mx:F0}) → 바깥쪽 {pushed} 카운트에서 이탈 (이론값 {400 + 24 / gain:F0})");
+        while (exitY == null && pushed < 2000) { Push(2 * outward); pushed += 2; await Task.Delay(8); }
+        Console.WriteLine($"{edge}: 안쪽 {inward} (실제 ({mx:F0}, {my:F0})) → 바깥쪽 {pushed} 카운트에서 이탈 (이론값 {inward + 24 / gain:F0}), 비율 {exitY:F3}");
         break;
     }
 }
@@ -186,6 +191,14 @@ async Task<string> RunAdb(string arguments)
     var psi = new ProcessStartInfo(adb, arguments) { RedirectStandardOutput = true, UseShellExecute = false, CreateNoWindow = true };
     using var p = Process.Start(psi)!;
     return await p.StandardOutput.ReadToEndAsync();
+}
+
+async Task<(double X, double Y)> ScreenPointer() // 호버 위치를 viewport 회전에 맞춰 화면 좌표로
+{
+    string text = await RunAdb("shell \"dumpsys input | grep -E 'viewport: Viewport|MOUSE\\) at'\"");
+    PhoneEdge.Phone.Adb.AdbParsers.TryParseMousePosition(text, out double hx, out double hy);
+    int o = PhoneEdge.Phone.Adb.AdbParsers.ParseMouseOrientation(text) ?? 0;
+    return PhoneEdge.Phone.Adb.AdbParsers.HoverToScreen(hx, hy, o, link.ScreenSize.Width, link.ScreenSize.Height);
 }
 
 async Task<string> ReadPointer()

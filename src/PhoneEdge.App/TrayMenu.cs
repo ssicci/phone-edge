@@ -9,8 +9,7 @@ internal sealed class TrayMenu
     private readonly string _versionText;
     private readonly bool _installed;
     private readonly ToolStripMenuItem _langAuto, _langKo, _langEn;
-    private readonly ToolStripMenuItem _sideRight, _sideLeft;
-    public ToolStripMenuItem PhoneSideMenu { get; }
+    public ToolStripMenuItem PhoneSlotItem { get; }
 
     public ContextMenuStrip Strip { get; } = new();
     public ToolStripMenuItem Version { get; }
@@ -35,7 +34,7 @@ internal sealed class TrayMenu
         Func<bool> disableDebuggingOnExit, Action onToggleDisableDebugging,
         Func<CompanionState> companionState, Action onCompanion,
         Action onCheckUpdate, Action onGuide, Action onTogglePause, Action<string> onLanguage, Action onExit,
-        PhoneSide phoneSide = PhoneSide.Right, Action<PhoneSide>? onPhoneSide = null)
+        Action? onPhoneSlot = null)
     {
         _autostartState = autostartState;
         _versionText = versionText;
@@ -56,10 +55,7 @@ internal sealed class TrayMenu
         Language = new ToolStripMenuItem();
         Language.DropDownItems.AddRange(new ToolStripItem[] { _langAuto, _langKo, _langEn });
         _exit = new ToolStripMenuItem(null, null, (_, _) => onExit());
-        _sideRight = new ToolStripMenuItem(null, null, (_, _) => onPhoneSide?.Invoke(PhoneSide.Right));
-        _sideLeft = new ToolStripMenuItem(null, null, (_, _) => onPhoneSide?.Invoke(PhoneSide.Left));
-        PhoneSideMenu = new ToolStripMenuItem();
-        PhoneSideMenu.DropDownItems.AddRange(new ToolStripItem[] { _sideRight, _sideLeft });
+        PhoneSlotItem = new ToolStripMenuItem(null, null, (_, _) => onPhoneSlot?.Invoke());
 
         Strip.Items.Add(Version);
         Strip.Items.Add(OpenFolder);
@@ -67,7 +63,7 @@ internal sealed class TrayMenu
         Strip.Items.Add(new ToolStripSeparator());
         Strip.Items.Add(Guide);
         Strip.Items.Add(Pause);
-        Strip.Items.Add(PhoneSideMenu);
+        Strip.Items.Add(PhoneSlotItem);
         Strip.Items.Add(AutostartItem);
         Strip.Items.Add(DisableDebuggingItem);
         Strip.Items.Add(CompanionItem);
@@ -75,7 +71,6 @@ internal sealed class TrayMenu
         Strip.Items.Add(new ToolStripSeparator());
         Strip.Items.Add(_exit);
         SetLanguageChecked(languageSetting);
-        SetPhoneSideChecked(phoneSide);
         ApplyLanguage();
         Strip.Opening += (_, _) => RefreshAutostart();   // 사용자가 Windows 설정에서 바꾼 것을 반영한다
         RefreshAutostart();
@@ -120,19 +115,11 @@ internal sealed class TrayMenu
         Guide.Text = L.T("Menu_Guide");
         Pause.Text = L.T("Menu_Pause");
         Language.Text = L.T("Menu_Language");
-        PhoneSideMenu.Text = L.T("Menu_PhoneSide");
-        _sideRight.Text = L.T("Menu_PhoneSideRight");
-        _sideLeft.Text = L.T("Menu_PhoneSideLeft");
+        PhoneSlotItem.Text = L.T("Menu_PhoneSlot");
         _langAuto.Text = L.T("Menu_LangAuto");
         _langKo.Text = L.T("Menu_LangKo");
         _langEn.Text = L.T("Menu_LangEn");
         _exit.Text = L.T("Menu_Exit");
-    }
-
-    public void SetPhoneSideChecked(PhoneSide side)
-    {
-        _sideRight.Checked = side == PhoneSide.Right;
-        _sideLeft.Checked = side == PhoneSide.Left;
     }
 
     public void SetLanguageChecked(string setting)
