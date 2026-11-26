@@ -1,3 +1,5 @@
+using PhoneEdge.Contracts;
+
 namespace PhoneEdge.Phone.Tracking;
 
 /// <summary>
@@ -10,6 +12,7 @@ namespace PhoneEdge.Phone.Tracking;
 /// 3. 모델 x 가 0 에 붙은 뒤에도 왼쪽으로 더 민 양(phone px)이 ExitThreshold 를 넘으면 이탈로 본다.
 ///    문턱은 남은 추적 오차를 흡수하고, 실수로 살짝 왼쪽으로 민 것과 "나가려는 의도"를 구분한다.
 /// 4. 버튼을 누른 채(드래그 중)에는 이탈하지 않는다.
+/// 진입 가장자리가 Right 면 좌우만 뒤집는다: 우상단 (W-1, 0) 에 붙이고, x 가 W-1 에 붙은 뒤 오른쪽으로 더 민 양으로 이탈을 본다.
 /// </summary>
 public sealed class CursorTracker
 {
@@ -25,7 +28,10 @@ public sealed class CursorTracker
     public double Y { get; private set; }
     public bool Active { get; private set; }
 
-    private double _pushedLeft;
+    /// <summary>진입 가장자리. 이탈도 이 가장자리를 바깥으로 넘을 때만 본다.</summary>
+    public PhoneEntryEdge Edge { get; private set; } = PhoneEntryEdge.Left;
+
+    private double _pushed; // 진입 가장자리 바깥으로 더 민 양 (폰 px)
 
     public double YRatio => Height <= 1 ? 0 : Y / (Height - 1);
 
@@ -34,10 +40,12 @@ public sealed class CursorTracker
     {
         if (width <= 0 || height <= 0) throw new ArgumentOutOfRangeException(nameof(width));
         if (width == Width && height == Height) return false;
+        double yRatio = YRatio; // 높이 비율을 유지한다 (회전·접기 뒤 같은 비율로 다시 기준을 맞추도록)
+        bool atRight = Edge == PhoneEntryEdge.Right && X >= Width - 1;
         Width = width;
         Height = height;
-        X = Math.Clamp(X, 0, width - 1);
-        Y = Math.Clamp(Y, 0, height - 1);
+        X = atRight ? width - 1 : Math.Clamp(X, 0, width - 1); // 오른쪽 기준은 새 폭을 따라간다
+        Y = Math.Clamp(yRatio * (height - 1), 0, height - 1);
         return true;
     }
 
@@ -45,19 +53,20 @@ public sealed class CursorTracker
     /// 진입. 폰에 보낼 상대 이동 목록(입력 카운트 단위)을 돌려준다:
     /// 먼저 좌상단으로 밀어 (0,0) 기준을 맞추고, 그다음 아래로 yRatio 위치까지 내린다.
     /// </summary>
-    public IReadOnlyList<(long Dx, long Dy)> Enter(double yRatio)
+    public IReadOnlyList<(long Dx, long Dy)> Enter(double yRatio, PhoneEntryEdge edge = PhoneEntryEdge.Left)
     {
+        Edge = edge == PhoneEntryEdge.Right ? PhoneEntryEdge.Right : PhoneEntryEdge.Left;
         yRatio = double.IsNaN(yRatio) ? 0.5 : Math.Clamp(yRatio, 0, 1);
         // 가장 큰 변보다 넉넉히 (Gain 이 작아도, 회전 직후여도) 밀어붙인다.
         long home = (long)Math.Ceiling(Math.Max(Width, Height) * 2 / Math.Max(Gain, 0.05));
         long down = (long)Math.Round(yRatio * (Height - 1) / Gain);
 
-        X = 0;
+        X = Edge == PhoneEntryEdge.Right ? Width - 1 : 0;
         Y = Math.Clamp(down * Gain, 0, Height - 1);
-        _pushedLeft = 0;
+        _pushed = 0;
         Active = true;
 
-        var moves = new List<(long, long)> { (-home, -home) };
+        var moves = new List<(long, long)> { (Edge == PhoneEntryEdge.Right ? home : -home, -home) };
         if (down != 0) moves.Add((0, down));
         return moves;
     }
@@ -65,12 +74,12 @@ public sealed class CursorTracker
     public void Leave()
     {
         Active = false;
-        _pushedLeft = 0;
+        _pushed = 0;
     }
 
     /// <summary>
     /// 이동 한 건을 반영한다. 이탈이면 true 와 이탈 높이 비율을 돌려주고 비활성이 된다
-    /// (이탈을 일으킨 이동은 폰에 보내지 않아도 된다: 커서는 이미 좌측 벽에 있다).
+    /// (이탈을 일으킨 이동은 폰에 보내지 않아도 된다: 커서는 이미 진입 가장자리 벽에 있다).
     /// </summary>
     public bool Move(int dx, int dy, bool buttonsHeld, out double exitYRatio)
     {
@@ -80,18 +89,27 @@ public sealed class CursorTracker
         double nx = X + dx * Gain;
         Y = Math.Clamp(Y + dy * Gain, 0, Height - 1);
 
-        if (nx < 0)
+        if (Edge == PhoneEntryEdge.Left)
         {
-            _pushedLeft += -nx;
-            X = 0;
+            if (nx < 0) { _pushed += -nx; X = 0; }
+            else
+            {
+                X = Math.Min(nx, Width - 1);
+                if (dx > 0) _pushed = 0; // 안쪽으로 돌아서면 밀어붙인 양 초기화
+            }
         }
         else
         {
-            X = Math.Min(nx, Width - 1);
-            if (dx > 0) _pushedLeft = 0; // 오른쪽으로 돌아서면 밀어붙인 양 초기화
+            double wall = Width - 1;
+            if (nx > wall) { _pushed += nx - wall; X = wall; }
+            else
+            {
+                X = Math.Max(nx, 0);
+                if (dx < 0) _pushed = 0;
+            }
         }
 
-        if (!buttonsHeld && _pushedLeft >= ExitThreshold)
+        if (!buttonsHeld && _pushed >= ExitThreshold)
         {
             exitYRatio = YRatio;
             Leave();

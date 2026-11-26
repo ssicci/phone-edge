@@ -11,6 +11,16 @@ public enum PhoneLinkState
     Ready,
 }
 
+/// <summary>
+/// 폰 모드에 들어갈 때 폰 커서가 나타나는 폰 화면의 가장자리 (진입 경계).
+/// 폰이 노트북 오른쪽에 있으면 Left, 왼쪽에 있으면 Right. 같은 가장자리를 다시 넘으면 노트북으로 돌아온다.
+/// </summary>
+public enum PhoneEntryEdge
+{
+    Left,
+    Right,
+}
+
 [Flags]
 public enum PhoneMouseButtons : byte
 {
@@ -79,6 +89,16 @@ public interface IPhoneLink : IAsyncDisposable
     /// 높이 비율 <paramref name="yRatio"/> (0.0~1.0) 위치에 놓는다.
     /// </summary>
     void Enter(double yRatio);
+
+    /// <summary>
+    /// 폰 모드 진입. 폰 커서를 <paramref name="edge"/> 가장자리의 높이 비율 <paramref name="yRatio"/> 위치에 놓고,
+    /// 이후 같은 가장자리를 바깥으로 넘으려 하면 <see cref="ExitRequested"/> 를 발생시킨다.
+    /// 기본 구현은 Left 만 지원한다 (기존 <see cref="Enter(double)"/>).
+    /// </summary>
+    void Enter(double yRatio, PhoneEntryEdge edge)
+    {
+        if (edge == PhoneEntryEdge.Left) Enter(yRatio);
+    }
 
     /// <summary>폰 모드 종료. 눌려 있는 버튼과 키를 모두 뗀 상태로 만든다.</summary>
     void Leave();

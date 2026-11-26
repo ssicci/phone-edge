@@ -4,6 +4,19 @@ namespace PhoneEdge.App.Core;
 
 public enum InputMode { Laptop, Phone }
 
+/// <summary>폰을 노트북의 어느 쪽에 두었는지. 설정 값은 "right"(기본) / "left".</summary>
+public enum PhoneSide { Right, Left }
+
+public static class PhoneSides
+{
+    public const string RightText = "right", LeftText = "left";
+
+    /// <summary>알 수 없거나 없는 값은 오른쪽(기본).</summary>
+    public static PhoneSide Parse(string? text) => text == LeftText ? PhoneSide.Left : PhoneSide.Right;
+
+    public static string ToText(PhoneSide side) => side == PhoneSide.Left ? LeftText : RightText;
+}
+
 /// <summary>화면(모니터) 사각형. Right/Bottom 은 포함하지 않는 값.</summary>
 public readonly record struct ScreenRect(int Left, int Top, int Right, int Bottom)
 {
@@ -15,6 +28,9 @@ public interface ICursorPlacer
 {
     /// <summary>우측 경계 안쪽, 높이 비율 yRatio 위치에 커서를 놓는다.</summary>
     void PlaceAtRightEdge(ScreenRect monitor, double yRatio);
+
+    /// <summary>좌측 경계 안쪽, 높이 비율 yRatio 위치에 커서를 놓는다.</summary>
+    void PlaceAtLeftEdge(ScreenRect monitor, double yRatio);
 }
 
 /// <summary>
@@ -33,6 +49,8 @@ public sealed class ModeController
     private PhoneMouseButtons _phoneButtons, _windowsButtons, _swallowedUp;
     private ScreenRect _entryMonitor;
     private double _lastYRatio;
+    private PhoneSide _side = PhoneSide.Right;       // 설정: 폰이 있는 쪽
+    private PhoneSide _entrySide = PhoneSide.Right;  // 이번 폰 모드에 들어갈 때의 쪽 (복귀 위치 기준)
     private bool _enabled = true;
 
     public ModeController(IPhoneLink link, ICursorPlacer cursor)
@@ -44,6 +62,20 @@ public sealed class ModeController
     public InputMode Mode { get; private set; } = InputMode.Laptop;
     /// <summary>모드가 바뀔 때 발생 (UI 갱신용).</summary>
     public event Action<InputMode>? ModeChanged;
+
+    /// <summary>
+    /// 폰이 있는 쪽. 폰 모드 중에 바꾸면 먼저 노트북으로 복귀한다(복귀 위치는 들어갈 때의 쪽).
+    /// </summary>
+    public PhoneSide Side
+    {
+        get => _side;
+        set
+        {
+            if (_side == value) return;
+            EmergencyExit();
+            _side = value;
+        }
+    }
 
     /// <summary>false(일시 정지)면 폰 모드에 들어가지 않고, 폰 모드였다면 즉시 복귀한다.</summary>
     public bool Enabled
@@ -57,9 +89,10 @@ public sealed class ModeController
     }
 
     /// <summary>
-    /// Raw Input 마우스 이동 한 건. rightEdgeMonitor: 커서가 있는 모니터가 가장 오른쪽 모니터일 때 그 사각형, 아니면 null.
+    /// Raw Input 마우스 이동 한 건. edgeMonitor: <see cref="Side"/> 쪽 끝(오른쪽이면 가장 오른쪽, 왼쪽이면 가장 왼쪽)
+    /// 모니터에 커서가 있을 때 그 사각형, 아니면 null.
     /// </summary>
-    public void OnRawMove(int dx, int dy, int cursorX, int cursorY, ScreenRect? rightEdgeMonitor)
+    public void OnRawMove(int dx, int dy, int cursorX, int cursorY, ScreenRect? edgeMonitor)
     {
         if (Mode == InputMode.Phone)
         {
@@ -67,8 +100,8 @@ public sealed class ModeController
             return;
         }
 
-        if (_enabled && dx > 0 && rightEdgeMonitor is { } m
-            && cursorX >= m.Right - 1
+        if (_enabled && edgeMonitor is { } m
+            && (_side == PhoneSide.Right ? dx > 0 && cursorX >= m.Right - 1 : dx < 0 && cursorX <= m.Left)
             && _windowsButtons == PhoneMouseButtons.None
             && _link.State == PhoneLinkState.Ready)
         {
@@ -160,7 +193,13 @@ public sealed class ModeController
     {
         if (Mode != InputMode.Phone) return;
         LeavePhoneMode();
-        _cursor.PlaceAtRightEdge(_entryMonitor, Math.Clamp(yRatio, 0.0, 1.0));
+        PlaceCursor(Math.Clamp(yRatio, 0.0, 1.0));
+    }
+
+    private void PlaceCursor(double yRatio)
+    {
+        if (_entrySide == PhoneSide.Left) _cursor.PlaceAtLeftEdge(_entryMonitor, yRatio);
+        else _cursor.PlaceAtRightEdge(_entryMonitor, yRatio);
     }
 
     /// <summary>비상 복귀: 폰 커서 위치와 무관하게 즉시 노트북 모드로. 폰 모드가 아니면 아무 일도 없다.</summary>
@@ -168,19 +207,21 @@ public sealed class ModeController
     {
         if (Mode != InputMode.Phone) return;
         LeavePhoneMode();
-        _cursor.PlaceAtRightEdge(_entryMonitor, _lastYRatio);
+        PlaceCursor(_lastYRatio);
     }
 
     private void Enter(ScreenRect monitor, double yRatio)
     {
         _entryMonitor = monitor;
+        _entrySide = _side;
         _lastYRatio = yRatio;
         _phoneKeys.Clear();
         _phoneButtons = PhoneMouseButtons.None;
         _phoneDownVks.Clear();
         _swallowedUp = PhoneMouseButtons.None;
         Mode = InputMode.Phone;
-        _link.Enter(yRatio);
+        // 폰을 오른쪽에 두면 폰의 왼쪽 끝으로, 왼쪽에 두면 폰의 오른쪽 끝으로 들어간다.
+        _link.Enter(yRatio, _entrySide == PhoneSide.Left ? PhoneEntryEdge.Right : PhoneEntryEdge.Left);
         ModeChanged?.Invoke(Mode);
     }
 

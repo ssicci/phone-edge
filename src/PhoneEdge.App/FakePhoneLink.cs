@@ -15,6 +15,7 @@ public sealed class FakePhoneLink : IPhoneLink
     private readonly object _gate = new();
     private double _x, _y;
     private bool _inPhone;
+    private PhoneEntryEdge _edge = PhoneEntryEdge.Left;
     private PhoneLinkState _state = PhoneLinkState.Disconnected;
 
     public FakePhoneLink(Action<string> log) => _log = log;
@@ -84,13 +85,16 @@ public sealed class FakePhoneLink : IPhoneLink
         StateChanged?.Invoke(next);
     }
 
-    public void Enter(double yRatio)
+    public void Enter(double yRatio) => Enter(yRatio, PhoneEntryEdge.Left);
+
+    public void Enter(double yRatio, PhoneEntryEdge edge)
     {
         lock (_gate)
         {
             if (_state != PhoneLinkState.Ready) return;
             _inPhone = true;
-            _x = 0;
+            _edge = edge;
+            _x = edge == PhoneEntryEdge.Right ? ScreenWidth - 1 : 0;
             _y = Math.Clamp(yRatio, 0, 1) * (ScreenHeight - 1);
             _log($"[fake] Enter yRatio={yRatio:F3} → 폰 커서 ({_x:F0},{_y:F0})");
         }
@@ -112,10 +116,11 @@ public sealed class FakePhoneLink : IPhoneLink
         lock (_gate)
         {
             if (_state != PhoneLinkState.Ready || !_inPhone) return;
-            _x = Math.Min(_x + dx, ScreenWidth - 1);
+            // 들어온 가장자리를 바깥으로 넘으면 ExitRequested, 반대쪽은 화면 끝에서 멈춘다.
+            _x = _edge == PhoneEntryEdge.Right ? Math.Max(_x + dx, 0) : Math.Min(_x + dx, ScreenWidth - 1);
             _y = Math.Clamp(_y + dy, 0, ScreenHeight - 1);
             _log($"[fake] 마우스 dx={dx} dy={dy} buttons={buttons} wheel={wheel} → ({_x:F0},{_y:F0})");
-            if (_x < 0)
+            if (_edge == PhoneEntryEdge.Right ? _x > ScreenWidth - 1 : _x < 0)
             {
                 _inPhone = false;
                 exitY = _y / (ScreenHeight - 1);
@@ -123,7 +128,7 @@ public sealed class FakePhoneLink : IPhoneLink
         }
         if (exitY is { } y)
         {
-            _log($"[fake] 좌측 경계 넘음 → ExitRequested({y:F3})");
+            _log($"[fake] {_edge} 경계 넘음 → ExitRequested({y:F3})");
             ExitRequested?.Invoke(y);
         }
     }

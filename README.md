@@ -40,6 +40,7 @@ Requires Windows 10 (version 2004) or later, 64-bit.
 
 - When the tray icon shows the green check, the phone is ready. Push the cursor past the right edge of your rightmost monitor to enter **phone mode** (blue arrow icon).
 - Push the phone cursor past the phone's left edge to return to the laptop. The laptop cursor reappears at the same height.
+- **Phone on the left?** Choose **Phone position → Left of the laptop** in the tray menu (the default is **Right of the laptop**). Then you push past the left edge of your leftmost monitor to enter, the cursor appears at the phone's right edge, and pushing past the phone's right edge brings you back. The choice is saved and applies immediately; if you change it while in phone mode, PhoneEdge returns to the laptop first.
 - **`Ctrl+Alt+Esc`** returns to the laptop immediately, from anywhere. Unplugging the phone also returns automatically.
 - While in phone mode, mouse movement, clicks, wheel, back/forward buttons and the keyboard (including Hangul/Hanja keys, right Alt/Ctrl and arrow keys) go to the phone.
 
@@ -59,7 +60,7 @@ Requires Windows 10 (version 2004) or later, 64-bit.
 
 ![Tray menu: version, check for updates, connection help, pause, language, exit](docs/images/en/tray-menu.png)
 
-Right-click the tray icon: the version (marked "development run" when started from a build folder), **Open install folder**, **Check for updates**, **Fix connection problem…** (enabled when there is a problem or a warning), **Pause**, **Start with Windows**, **Turn off phone USB debugging on exit**, **Install phone helper app…** (shown when the phone is ready), **언어 / Language**, and **Exit**.
+Right-click the tray icon: the version (marked "development run" when started from a build folder), **Open install folder**, **Check for updates**, **Fix connection problem…** (enabled when there is a problem or a warning), **Pause**, **Phone position** (right or left of the laptop), **Start with Windows**, **Turn off phone USB debugging on exit**, **Install phone helper app…** (shown when the phone is ready), **언어 / Language**, and **Exit**.
 
 ### Start with Windows
 
@@ -133,7 +134,7 @@ Before restarting for an update the app leaves phone mode and releases its hooks
 
 - USB cable only for now (wireless is planned as a separate link). One phone at a time.
 - Tested on the Galaxy Z Fold7 only. Folding and unfolding the phone while connected has not been measured.
-- The phone is assumed to be to the **right** of the laptop. Edge crossing happens only on the rightmost monitor.
+- The phone can be to the **right** or **left** of the laptop (**Phone position** in the tray menu); above or below is not supported yet. Edge crossing happens only on the outermost monitor on that side (rightmost or leftmost).
 - Phone mode uses Raw Input from a mouse. Precision touchpads may not report movement this way, so use an external mouse.
 - The installer is not code-signed (SmartScreen warning). Windows notifications need Windows 10 2004 or later.
 - The app does not replace the phone's own settings: pointer acceleration should be off for accurate returns.

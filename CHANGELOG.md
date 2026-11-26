@@ -3,6 +3,16 @@
 Each version has a `## [X.Y.Z] - date` entry: the English notes first, then a `---` line and the Korean notes. `## [Unreleased]` collects the changes for the next release; `scripts/release.ps1 X.Y.Z` renames it to the new version and date. The app's update window (current language only) and the GitHub release notes show the entry as written (the app UI is available in Korean and English).
 버전마다 `## [X.Y.Z] - 날짜` 항목을 두고, 영문 설명 다음에 `---` 줄과 한글 설명을 씁니다. `## [Unreleased]`에는 다음 릴리스의 변경 내용을 모아 두고, `scripts/release.ps1 X.Y.Z`가 이를 새 버전과 날짜로 바꿉니다. 업데이트 창에는 현재 언어 부분만, GitHub 릴리스 노트에는 이 내용이 그대로 나옵니다.
 
+## [0.6.0] - 2026-11-26
+
+### Added
+- **Phone position** setting in the tray menu: put the phone to the **left** of the laptop as well as to the right (the default). With the phone on the left, push the cursor past the left edge of the leftmost monitor to enter; it appears at the phone's right edge, and pushing past the phone's right edge returns you to the same height at the laptop's left edge. The choice is saved and applies immediately (changing it in phone mode returns to the laptop first). Above/below is not supported yet.
+
+---
+
+### 추가
+- 트레이 메뉴의 **폰 위치** 설정: 폰을 노트북 오른쪽(기본)뿐 아니라 **왼쪽**에도 둘 수 있습니다. 폰이 왼쪽에 있으면 가장 왼쪽 모니터의 왼쪽 끝 밖으로 밀어 들어가고, 커서는 폰의 오른쪽 끝에서 나타나며, 폰의 오른쪽 끝 밖으로 밀면 노트북 왼쪽 끝의 같은 높이로 돌아옵니다. 선택은 저장되고 바로 적용됩니다(폰 모드 중에 바꾸면 먼저 노트북으로 돌아옵니다). 위·아래 배치는 아직 지원하지 않습니다.
+
 ## [0.5.3] - 2026-11-25
 
 ### Fixed

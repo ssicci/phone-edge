@@ -104,6 +104,15 @@ public sealed class SettingsStore
         public bool? DisableUsbDebuggingOnExit { get; set; }
         /// <summary>마지막으로 확인했을 때 폰에 도우미 앱이 있었는지.</summary>
         public bool? CompanionPresent { get; set; }
+        /// <summary>폰이 있는 쪽. "right"(기본) / "left".</summary>
+        public string? PhoneSide { get; set; }
+    }
+
+    /// <summary>폰을 노트북의 어느 쪽에 두는지. 없거나 알 수 없는 값이면 오른쪽.</summary>
+    public PhoneSide PhoneSide
+    {
+        get => PhoneSides.Parse(Read().PhoneSide);
+        set { var d = Read(); d.PhoneSide = PhoneSides.ToText(value); Write(d); }
     }
 
     /// <summary>

@@ -12,6 +12,8 @@ internal sealed class StubLink : IPhoneLink
     public List<string> Calls = new();
     public Task StartAsync(CancellationToken c) => Task.CompletedTask;
     public void Enter(double y) => Calls.Add($"Enter {y:F2}");
+    public List<PhoneEntryEdge> Edges = new();
+    public void Enter(double y, PhoneEntryEdge edge) { Edges.Add(edge); Enter(y); }
     public void Leave() => Calls.Add("Leave");
     public void SendMouse(int dx, int dy, PhoneMouseButtons b, int w) => Calls.Add($"Mouse {dx},{dy},{b},{w}");
     public void SendKeyboard(byte m, ReadOnlySpan<byte> k) => Calls.Add($"Key {m:X2},{string.Join(' ', k.ToArray().Select(x => x.ToString("X2")))}");
@@ -22,6 +24,8 @@ internal sealed class StubCursor : ICursorPlacer
 {
     public List<double> Placed = new();
     public void PlaceAtRightEdge(ScreenRect m, double y) => Placed.Add(y);
+    public List<double> PlacedLeft = new();
+    public void PlaceAtLeftEdge(ScreenRect m, double y) => PlacedLeft.Add(y);
 }
 
 public class ModeControllerTests

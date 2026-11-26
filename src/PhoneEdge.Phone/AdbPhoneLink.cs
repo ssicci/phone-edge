@@ -347,9 +347,11 @@ public sealed class AdbPhoneLink : IPhoneLink
 
     // ---- 입력 (훅 스레드, 즉시 반환) ----
 
-    public void Enter(double yRatio)
+    public void Enter(double yRatio) => Enter(yRatio, PhoneEntryEdge.Left);
+
+    public void Enter(double yRatio, PhoneEntryEdge edge)
     {
-        if (State == PhoneLinkState.Ready) _queue.Writer.TryWrite(new Cmd(CmdKind.Enter) { Y = yRatio });
+        if (State == PhoneLinkState.Ready) _queue.Writer.TryWrite(new Cmd(CmdKind.Enter) { Y = yRatio, A = (int)edge });
     }
 
     public void Leave()
@@ -400,7 +402,7 @@ public sealed class AdbPhoneLink : IPhoneLink
                     {
                         switch (c.Kind)
                         {
-                            case CmdKind.Enter: _processor.Enter(c.Y); break;
+                            case CmdKind.Enter: _processor.Enter(c.Y, (PhoneEntryEdge)c.A); break;
                             case CmdKind.Leave: _processor.Leave(); break;
                             case CmdKind.Mouse: _processor.Mouse(c.A, c.B, (PhoneMouseButtons)c.C, c.D); break;
                             case CmdKind.Keyboard:

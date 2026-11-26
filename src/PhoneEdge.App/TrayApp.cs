@@ -61,7 +61,15 @@ internal sealed class TrayApp : ApplicationContext
                 trayMenu!.SetLanguageChecked(setting);
                 L.SetLanguage(setting);
             },
-            ExitApp);
+            ExitApp,
+            settings.PhoneSide,
+            side =>
+            {
+                settings.PhoneSide = side;
+                _controller.Side = side;   // 폰 모드 중이면 먼저 노트북으로 복귀한다
+                trayMenu!.SetPhoneSideChecked(side);
+            });
+        _controller.Side = settings.PhoneSide;
         // 언어가 바뀌면 메뉴, 툴팁, 열려 있는 창이 바로 바뀐다.
         L.Changed += () =>
         {
@@ -100,7 +108,8 @@ internal sealed class TrayApp : ApplicationContext
         };
         if (_updates.IsInstalled) _updateTimer.Start();
 
-        _interceptor = new InputInterceptor(_controller, screen.RightEdgeMonitorAt);
+        _interceptor = new InputInterceptor(_controller,
+            (x, y) => _controller.Side == PhoneSide.Left ? screen.LeftEdgeMonitorAt(x, y) : screen.RightEdgeMonitorAt(x, y));
         Logger.Info("입력 훅 설치됨. 폰 모드 비상 복귀: Ctrl+Alt+Esc. 로그: " + Logger.FilePath);
 
         _ = StartLinkAsync();

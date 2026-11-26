@@ -68,6 +68,7 @@ Console.WriteLine("폰 연결 대기 (USB 디버깅 허용 필요)...");
 await ready.Task.WaitAsync(TimeSpan.FromMinutes(2));
 Console.WriteLine($"Ready, 화면 {link.ScreenSize}, 이득 {link.MeasuredGain}, 가속 {link.MouseAccelerationEnabled}");
 gain = link.MeasuredGain ?? gain;
+var edge = args.Contains("right") ? PhoneEntryEdge.Right : PhoneEntryEdge.Left;
 
 switch (mode)
 {
@@ -150,26 +151,33 @@ switch (mode)
         break;
     }
 
-    case "enter": // Enter(y) 후 실제 포인터 y 확인
+    case "enter": // Enter(y) 후 실제 포인터 위치 확인: enter <gain> [right]
         foreach (double r in new[] { 0.2, 0.5, 0.8 })
         {
-            link.Enter(r);
+            link.Enter(r, edge);
             await Task.Delay(500);
             string line = await RunAdb("shell \"dumpsys input | grep -m1 'MOUSE) at'\"");
             PhoneEdge.Phone.Adb.AdbParsers.TryParseMousePosition(line, out double px, out double py);
-            Console.WriteLine($"Enter({r}) → 실제 ({px:F0}, {py:F0}), 기대 (0, {r * (link.ScreenSize.Height - 1):F0})");
+            double ex = edge == PhoneEntryEdge.Right ? link.ScreenSize.Width - 1 : 0;
+            Console.WriteLine($"Enter({r}, {edge}) → 실제 ({px:F0}, {py:F0}), 기대 ({ex:F0}, {r * (link.ScreenSize.Height - 1):F0})");
             link.Leave();
         }
         break;
 
-    case "exit":
-        link.Enter(0.5);
+    case "exit": // exit <gain> [right]: 안쪽으로 400 이동 후 진입 가장자리 쪽으로 2 카운트씩 밀어 이탈 카운트를 잰다
+    {
+        int inward = edge == PhoneEntryEdge.Right ? -1 : 1;
+        link.Enter(0.5, edge);
         await Task.Delay(300);
-        for (int i = 0; i < 40; i++) { link.SendMouse(10, 0, 0, 0); await Task.Delay(8); }
+        for (int i = 0; i < 40; i++) { link.SendMouse(10 * inward, 0, 0, 0); await Task.Delay(8); }
+        await Task.Delay(300);
+        string mid = await RunAdb("shell \"dumpsys input | grep -m1 'MOUSE) at'\"");
+        PhoneEdge.Phone.Adb.AdbParsers.TryParseMousePosition(mid, out double mx, out _);
         int pushed = 0;
-        while (exitY == null && pushed < 2000) { link.SendMouse(-2, 0, 0, 0); pushed += 2; await Task.Delay(8); }
-        Console.WriteLine($"오른쪽 400 → 왼쪽 {pushed} 카운트에서 이탈 (이론값 {400 + 24 / gain:F0})");
+        while (exitY == null && pushed < 2000) { link.SendMouse(-2 * inward, 0, 0, 0); pushed += 2; await Task.Delay(8); }
+        Console.WriteLine($"{edge}: 안쪽 400 (실제 x={mx:F0}) → 바깥쪽 {pushed} 카운트에서 이탈 (이론값 {400 + 24 / gain:F0})");
         break;
+    }
 }
 await Task.Delay(500);
 

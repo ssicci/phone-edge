@@ -55,5 +55,6 @@
 
   <!-- cable -->
   <path class="cable" d="M260 278 C260 322 668 322 668 276"/>
+  <text class="muted" x="440" y="20" text-anchor="middle">Phone on the left? Everything is mirrored.</text>
   <text class="muted" x="464" y="328" text-anchor="middle">USB cable</text>
 </svg>
