@@ -1,4 +1,4 @@
-# PhoneEdge
+# Twinput
 
 A Windows app that lets you use the laptop's mouse and keyboard on an Android phone placed next to it, by moving the cursor across the screen edge. Korean terms in parentheses are the words used in the app UI and the code.
 
@@ -26,7 +26,7 @@ _Avoid_: phone side, phone position (these meant only left/right before 0.7)
 The monitors connected at one time, identified by each monitor's stable ID and their arrangement in Windows. Plugging the laptop into a different desk gives a different monitor set.
 
 **Layout profile** (배치 프로필):
-The phone slot remembered for one monitor set. PhoneEdge picks the profile that matches the current monitor set.
+The phone slot remembered for one monitor set. Twinput picks the profile that matches the current monitor set.
 _Avoid_: preset, location
 
 **Accidental entry guard** (오진입 방지):

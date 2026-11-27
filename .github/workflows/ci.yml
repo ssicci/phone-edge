@@ -47,10 +47,10 @@ jobs:
         run: ./gradlew.bat --no-daemon assembleDebug
 
       - name: 빌드
-        run: dotnet build src/PhoneEdge.App/PhoneEdge.App.csproj -c Release
+        run: dotnet build src/Twinput.App/Twinput.App.csproj -c Release
 
       - name: 앱 테스트
-        run: dotnet test tests/PhoneEdge.App.Tests/PhoneEdge.App.Tests.csproj -c Release
+        run: dotnet test tests/Twinput.App.Tests/Twinput.App.Tests.csproj -c Release
 
       - name: 폰 연결 엔진 테스트
-        run: dotnet test tests/PhoneEdge.Phone.Tests/PhoneEdge.Phone.Tests.csproj -c Release
+        run: dotnet test tests/Twinput.Phone.Tests/Twinput.Phone.Tests.csproj -c Release

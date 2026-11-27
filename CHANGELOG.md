@@ -3,6 +3,22 @@
 Each version has a `## [X.Y.Z] - date` entry: the English notes first, then a `---` line and the Korean notes. `## [Unreleased]` collects the changes for the next release; `scripts/release.ps1 X.Y.Z` renames it to the new version and date. The app's update window (current language only) and the GitHub release notes show the entry as written (the app UI is available in Korean and English).
 버전마다 `## [X.Y.Z] - 날짜` 항목을 두고, 영문 설명 다음에 `---` 줄과 한글 설명을 씁니다. `## [Unreleased]`에는 다음 릴리스의 변경 내용을 모아 두고, `scripts/release.ps1 X.Y.Z`가 이를 새 버전과 날짜로 바꿉니다. 업데이트 창에는 현재 언어 부분만, GitHub 릴리스 노트에는 이 내용이 그대로 나옵니다.
 
+## [0.8.0] - 2026-11-27
+
+### Changed
+- **PhoneEdge is now Twinput** (twin + input). The app, the installer, the tray, windows, notifications and the phone helper app's visible name ("Twinput Companion") all use the new name. The helper app keeps its Android application id, so an installed helper app keeps updating and keeps its permission.
+- The installer id changed, so **an installed PhoneEdge does not update itself to Twinput**: install Twinput once from the new setup file (`Twinput-win-x64-Setup.exe`). The first time Twinput starts it copies your settings (language, phone positions, helper-app state, options) from PhoneEdge's folder, turns on **Start with Windows** if PhoneEdge had it on and removes PhoneEdge's entry, and shows a one-time notice (asking you to exit PhoneEdge first if it is still running). PhoneEdge itself is not touched: remove it in **Settings → Apps → Installed apps**.
+- Updates now use their own channel (`win-x64`) so an old PhoneEdge can never download a Twinput package and apply it over itself.
+- The GitHub repository is now `ssicci/twinput`, the log file is `twinput.log`, and the developer update-source variable is `TWINPUT_UPDATE_SOURCE`.
+
+---
+
+### 변경
+- **PhoneEdge가 Twinput(트윈풋, twin + input)으로 이름이 바뀌었습니다.** 앱, 설치 프로그램, 트레이, 창, 알림, 폰 도우미 앱의 보이는 이름("Twinput 도우미")이 모두 새 이름을 씁니다. 도우미 앱은 안드로이드 앱 ID를 그대로 두므로, 설치된 도우미 앱은 계속 업데이트되고 권한도 유지됩니다.
+- 설치 프로그램 ID가 바뀌어서 **설치된 PhoneEdge는 저절로 Twinput으로 업데이트되지 않습니다.** 새 설치 파일(`Twinput-win-x64-Setup.exe`)로 Twinput을 한 번 설치하세요. Twinput은 처음 실행할 때 PhoneEdge 폴더에서 설정(언어, 폰 위치, 도우미 앱 상태, 옵션)을 복사해 오고, PhoneEdge의 **Windows 시작 시 자동 실행**이 켜져 있었다면 Twinput의 것을 켜고 PhoneEdge의 등록을 지우며, 안내를 한 번 보여 줍니다(PhoneEdge가 아직 실행 중이면 먼저 종료하라고 알려 줍니다). PhoneEdge 자체는 건드리지 않으니 **설정 → 앱 → 설치된 앱**에서 제거하세요.
+- 업데이트는 이제 자체 채널(`win-x64`)을 써서, 옛 PhoneEdge가 Twinput 패키지를 받아 자기 위에 적용하는 일이 없도록 했습니다.
+- GitHub 저장소는 `ssicci/twinput`, 로그 파일은 `twinput.log`, 개발자용 업데이트 소스 환경 변수는 `TWINPUT_UPDATE_SOURCE`입니다.
+
 ## [0.7.1] - 2026-11-26
 
 ### Fixed

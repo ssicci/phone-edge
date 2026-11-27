@@ -1,6 +1,6 @@
-# PhoneEdge Companion (phone app)
+# Twinput Companion (phone app)
 
-PhoneEdge Companion is a small, optional Android app. It turns **USB debugging on when a USB data connection to a computer appears and off when it goes away**, so banking and brokerage apps, which refuse to run while USB debugging is on, work as soon as the cable is unplugged. PhoneEdge on the PC works without it.
+Twinput Companion is a small, optional Android app. It turns **USB debugging on when a USB data connection to a computer appears and off when it goes away**, so banking and brokerage apps, which refuse to run while USB debugging is on, work as soon as the cable is unplugged. Twinput on the PC works without it.
 
 Source: [`android/`](../android). Package name: `io.github.ssicci.phoneedge.companion`.
 
@@ -13,7 +13,7 @@ Source: [`android/`](../android). Package name: `io.github.ssicci.phoneedge.comp
 4. On a change of the data-connection state the service writes `Settings.Global.ADB_ENABLED` (`1` on connect, `0` on disconnect) and logs it.
    - "Connected" is acted on at once.
    - "Disconnected" is acted on after 1 s if the phone is no longer powered (cable pulled), or after 6 s if it is still powered. Changing `adb_enabled` makes the phone re-enumerate on USB, which reports `connected=false` for a moment while the cable stays in; the delay keeps that from being taken as an unplug.
-   - The service acts only on **transitions**. If you turn USB debugging off by hand while the cable is in (Quick Settings tile, Settings, or PhoneEdge's own "turn off USB debugging on exit"), it stays off until the next unplug/plug.
+   - The service acts only on **transitions**. If you turn USB debugging off by hand while the cable is in (Quick Settings tile, Settings, or Twinput's own "turn off USB debugging on exit"), it stays off until the next unplug/plug.
 5. The app screen has a switch for this automatic behaviour (default on). Turning it back on applies the current state immediately.
 6. Every state change (connection, USB debugging, who changed it, how long the write took) is kept in an in-app log of the last 20 events, shown on the main screen. A change made by something else (Settings, a computer, Auto Blocker) is logged as such.
 7. A Quick Settings tile "USB debugging" turns it on or off by hand.
@@ -41,7 +41,7 @@ The app has no internet permission and no dependencies beyond the Android framew
 
 ## Samsung settings
 
-- **Battery: Unrestricted.** Settings > Apps > PhoneEdge Companion > Battery > Unrestricted (the app shows the state and a button). Unrestricted apps are also kept out of "Sleeping apps"; make sure the app is not in "Sleeping apps" / "Deep sleeping apps" (Settings > Battery > Background usage limits).
+- **Battery: Unrestricted.** Settings > Apps > Twinput Companion > Battery > Unrestricted (the app shows the state and a button). Unrestricted apps are also kept out of "Sleeping apps"; make sure the app is not in "Sleeping apps" / "Deep sleeping apps" (Settings > Battery > Background usage limits).
   Over adb the same allow list can be set with `adb shell cmd deviceidle whitelist +io.github.ssicci.phoneedge.companion`.
 - **Auto Blocker** (Settings > Security and privacy > Auto Blocker) can turn USB debugging off by itself (it keeps `rampart_snapshot_adb_enabled`). Keep it off. Its switch is stored in `Settings.Secure` `rampart_main_switch_enabled`, but an app targeting API 31+ gets nothing back for that non-public key (measured on the reference phone), so the app cannot detect it and shows a reminder instead.
 - **Notification**: the status notification can be collapsed or its channel silenced; do not turn notifications for the app off entirely if you want to see the state.
@@ -74,7 +74,7 @@ cd android
 
 ### Version
 
-The app version always equals PhoneEdge's: Gradle reads `<Version>X.Y.Z</Version>` from the repository's `Directory.Build.props`.
+The app version always equals Twinput's: Gradle reads `<Version>X.Y.Z</Version>` from the repository's `Directory.Build.props`.
 
 - `versionName` = `X.Y.Z`
 - `versionCode` = `X*10000 + Y*100 + Z` (0.4.0 → 400, 1.2.3 → 10203). Minor and patch must stay below 100; the build fails otherwise.
@@ -88,7 +88,7 @@ Android installs an update over an existing app only when both are signed with t
 | | |
 |---|---|
 | Keystore | PKCS12, alias `phoneedge-companion`, kept **outside the repository on the maintainer's PC** (store and key password are the same) |
-| Certificate | `CN=PhoneEdge Companion` |
+| Certificate | `CN=Twinput Companion` |
 | SHA-256 fingerprint | `42:69:FA:0B:05:97:14:76:65:DA:03:9F:9A:00:15:FA:8A:51:4D:1B:A2:94:C7:37:4A:03:8C:9F:BB:30:FC:09` |
 | GitHub Actions secrets | `COMPANION_KEYSTORE_BASE64`, `COMPANION_KEYSTORE_PASSWORD`, `COMPANION_KEY_ALIAS`, `COMPANION_KEY_PASSWORD` |
 

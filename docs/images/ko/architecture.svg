@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 300" width="800" height="300" role="img" aria-labelledby="t d">
-  <title id="t">PhoneEdge 구조</title>
-  <desc id="d">노트북의 PhoneEdge가 마우스·키보드 입력을 가로채 USB로 adb를 거쳐 폰의 scrcpy 서버에 보내면, 서버가 UHID로 가상 마우스와 키보드를 만듭니다.</desc>
+  <title id="t">Twinput 구조</title>
+  <desc id="d">노트북의 Twinput이 마우스·키보드 입력을 가로채 USB로 adb를 거쳐 폰의 scrcpy 서버에 보내면, 서버가 UHID로 가상 마우스와 키보드를 만듭니다.</desc>
   <style>
     text { font-family:-apple-system,"Segoe UI","Malgun Gothic","Apple SD Gothic Neo","Noto Sans KR",Helvetica,Arial,sans-serif; }
     :root { --bg:#ffffff; --fg:#1f2328; --muted:#59636e; --box:#eaf1fb; --boxline:#9db4d3; --phone:#eaf7ee; --phoneline:#9bc9a6; --line:#6e7681; --accent:#1e88e5; }
@@ -29,7 +29,7 @@
   <text class="h" x="484" y="52">안드로이드 폰</text>
 
   <rect class="pc" x="26" y="82" width="180" height="82" rx="8"/>
-  <text class="name" x="116" y="115" text-anchor="middle">PhoneEdge 앱</text>
+  <text class="name" x="116" y="115" text-anchor="middle">Twinput 앱</text>
   <text class="sub" x="116" y="136" text-anchor="middle">입력 훅 + Raw Input,</text>
   <text class="sub" x="116" y="152" text-anchor="middle">경계 감지</text>
 

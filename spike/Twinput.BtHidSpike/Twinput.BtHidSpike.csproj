@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Spike: can the laptop's built-in Bluetooth act as a BLE HID (HID over GATT) mouse + keyboard for the phone?
+    Publish (single self-contained exe):
+      dotnet publish spike/Twinput.BtHidSpike -c Release -o spike/out  (run 3 exe: Twinput.BtHidSpike3.exe, log: spike/bt-hid-result-3.txt)
+    Run it from Explorer (not from a sandboxed shell): Bluetooth advertising is aborted inside packaged sandboxes.
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0-windows10.0.22621.0</TargetFramework>
+    <SupportedOSPlatformVersion>10.0.19041.0</SupportedOSPlatformVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <AssemblyName>Twinput.BtHidSpike3</AssemblyName>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <SelfContained>true</SelfContained>
+    <PublishSingleFile>true</PublishSingleFile>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <InvariantGlobalization>false</InvariantGlobalization>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Twinput.Phone\Twinput.Phone.csproj" />
+  </ItemGroup>
+
+</Project>

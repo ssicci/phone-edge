@@ -2,7 +2,7 @@ plugins {
     id("com.android.application")
 }
 
-// The app version follows PhoneEdge: <Version>X.Y.Z</Version> in the repository's Directory.Build.props.
+// The app version follows Twinput: <Version>X.Y.Z</Version> in the repository's Directory.Build.props.
 val phoneEdgeVersion: String = run {
     val props = rootDir.resolveSibling("Directory.Build.props")
     val match = Regex("<Version>\\s*(\\d+\\.\\d+\\.\\d+)\\s*</Version>").find(props.readText())

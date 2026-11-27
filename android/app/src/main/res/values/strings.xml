@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">PhoneEdge Companion</string>
+    <string name="app_name">Twinput Companion</string>
     <string name="intro">Turns USB debugging on when a USB data cable to a computer is connected, and off when it is unplugged, so banking apps work when the phone is not on the cable.</string>
     <string name="auto_switch">Turn USB debugging on and off automatically</string>
     <string name="section_status">Status</string>
@@ -16,7 +16,7 @@
 
     <string name="permission_ok">Permission to change USB debugging: granted</string>
     <string name="permission_missing">Permission to change USB debugging: not granted</string>
-    <string name="grant_help">Connect the phone to the computer with USB debugging on, then grant it once from PhoneEdge on the computer, or run this command:</string>
+    <string name="grant_help">Connect the phone to the computer with USB debugging on, then grant it once from Twinput on the computer, or run this command:</string>
     <string name="grant_command">adb shell pm grant %1$s android.permission.WRITE_SECURE_SETTINGS</string>
 
     <string name="battery_ok">Battery usage: Unrestricted</string>

@@ -1,12 +1,12 @@
 # Phase 0 verification results (2026-11-16, SM-F966N, unfolded 1968×2184, device reports Android 17)
 
 Tools: platform-tools r37.0.3 (SHA-1 matched), scrcpy-server v5.0.1 (SHA-256 matched) — see `tools/versions.json`
-Reproduce: `dotnet run --project spike/PhoneEdge.Spike -- demo|exit|enter|curve|accel`
+Reproduce: `dotnet run --project spike/Twinput.Spike -- demo|exit|enter|curve|accel`
 
 | Item | Result | Evidence |
 |---|---|---|
 | (a) adb recognizes the phone | Pass | `adb devices` → `<serial> device` (laptop) |
-| (b) Server + UHID | Pass | Ran the server with `video=false audio=false control=true`; "PhoneEdge Mouse/Keyboard" were created (Classes: CURSOR). `getevent` showed REL_X/Y, BTN_MOUSE down/up, and KEY_H·E·L·L·O down/up. `dumpsys` showed the pointer coordinates moving |
+| (b) Server + UHID | Pass | Ran the server with `video=false audio=false control=true`; "Twinput Mouse/Keyboard" were created (Classes: CURSOR). `getevent` showed REL_X/Y, BTN_MOUSE down/up, and KEY_H·E·L·L·O down/up. `dumpsys` showed the pointer coordinates moving |
 | (c) Cursor tracking | Pass (conditional) | See below |
 | (d) Screen size detection | Implemented, folding not measured | Reads the MouseCursorController viewport (displayId, logicalFrame) from `dumpsys input` every second. On the Fold7 the cover display (display 1, 1080×2520) and the main display (display 0) are separate logical displays, so the first `cur=` in `dumpsys window displays` gives the wrong screen |
 

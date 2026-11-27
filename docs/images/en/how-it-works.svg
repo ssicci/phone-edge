@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 330" width="800" height="330" role="img" aria-labelledby="t d">
-  <title id="t">How PhoneEdge moves your mouse and keyboard to the phone</title>
+  <title id="t">How Twinput moves your mouse and keyboard to the phone</title>
   <desc id="d">The cursor leaves the right edge of the laptop screen and appears at the left edge of the phone screen. Pushing past the phone's left edge brings it back.</desc>
   <style>
     :root { --bg:#ffffff; --fg:#1f2328; --muted:#59636e; --screen:#eaf1fb; --body:#2b3340; --line:#8a94a3; --blue:#1e88e5; --green:#2eb84b; --orange:#f59e0b; }

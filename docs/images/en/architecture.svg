@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 300" width="800" height="300" role="img" aria-labelledby="t d">
-  <title id="t">PhoneEdge architecture</title>
-  <desc id="d">On the laptop, PhoneEdge captures mouse and keyboard input and sends it through adb over USB to the scrcpy server on the phone, which creates a virtual mouse and keyboard using UHID.</desc>
+  <title id="t">Twinput architecture</title>
+  <desc id="d">On the laptop, Twinput captures mouse and keyboard input and sends it through adb over USB to the scrcpy server on the phone, which creates a virtual mouse and keyboard using UHID.</desc>
   <style>
     :root { --bg:#ffffff; --fg:#1f2328; --muted:#59636e; --box:#eaf1fb; --boxline:#9db4d3; --phone:#eaf7ee; --phoneline:#9bc9a6; --line:#6e7681; --accent:#1e88e5; }
     @media (prefers-color-scheme: dark) {
@@ -28,7 +28,7 @@
   <text class="h" x="484" y="52">ANDROID PHONE</text>
 
   <rect class="pc" x="26" y="82" width="180" height="82" rx="8"/>
-  <text class="name" x="116" y="115" text-anchor="middle">PhoneEdge app</text>
+  <text class="name" x="116" y="115" text-anchor="middle">Twinput app</text>
   <text class="sub" x="116" y="136" text-anchor="middle">hooks + Raw Input,</text>
   <text class="sub" x="116" y="152" text-anchor="middle">edge detection</text>
 

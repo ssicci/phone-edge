@@ -6,13 +6,13 @@
 #>
 $ErrorActionPreference = 'Stop'
 $root = Resolve-Path (Join-Path $PSScriptRoot '..')
-$proj = Join-Path $root 'src/PhoneEdge.App/PhoneEdge.App.csproj'
+$proj = Join-Path $root 'src/Twinput.App/Twinput.App.csproj'
 $out = Join-Path $root 'docs/images'
 
 dotnet build $proj -c Debug --nologo -v q
 if ($LASTEXITCODE -ne 0) { throw 'build failed' }
 
-$exe = Get-ChildItem (Join-Path $root 'src/PhoneEdge.App/bin/Debug') -Recurse -Filter PhoneEdge.exe | Select-Object -First 1
+$exe = Get-ChildItem (Join-Path $root 'src/Twinput.App/bin/Debug') -Recurse -Filter Twinput.exe | Select-Object -First 1
 & $exe.FullName --make-docs $out | Out-Host
 Start-Sleep -Seconds 1   # WinExe 는 비동기로 끝나므로 파일이 다 써질 시간을 준다
 Get-ChildItem $out -Recurse -Filter *.png | Select-Object FullName, @{n = 'KB'; e = { [math]::Round($_.Length / 1KB) } }

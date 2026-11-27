@@ -9,7 +9,11 @@ permissions:
   contents: write
 
 env:
-  VPK_VERSION: 1.2.161   # src/PhoneEdge.App 이 참조하는 Velopack 패키지 버전과 같게 유지한다
+  VPK_VERSION: 1.2.161   # src/Twinput.App 이 참조하는 Velopack 패키지 버전과 같게 유지한다
+  # 업데이트 채널. 옛 PhoneEdge 는 기본 채널(win)의 releases.win.json 을 보고, Velopack 은 피드의 PackageId 를 거르지 않는다.
+  # 채널을 분리해 옛 앱이 Twinput 패키지를 받아 자기 위에 적용하지 않게 한다. 설치 파일은 Twinput-win-x64-Setup.exe 가 된다.
+  # src/Twinput.App/Updates.cs 의 UpdateService.Channel 과 같아야 한다.
+  CHANNEL: win-x64
 
 jobs:
   release:
@@ -40,15 +44,15 @@ jobs:
         shell: pwsh
         run: |
           $cfg = Get-Content tools/versions.json -Raw -Encoding UTF8 | ConvertFrom-Json
-          $src = Get-Content src/PhoneEdge.Phone/AdbPhoneLinkOptions.cs -Raw -Encoding UTF8
+          $src = Get-Content src/Twinput.Phone/AdbPhoneLinkOptions.cs -Raw -Encoding UTF8
           if ($src -notmatch ('ServerVersion\s*\{\s*get;\s*init;\s*\}\s*=\s*"' + [regex]::Escape($cfg.scrcpyServer.version) + '"')) {
             throw "tools/versions.json 의 scrcpy 서버 버전($($cfg.scrcpyServer.version))과 AdbPhoneLinkOptions.ServerVersion 이 다릅니다."
           }
 
       - name: 테스트
         run: |
-          dotnet test tests/PhoneEdge.App.Tests/PhoneEdge.App.Tests.csproj -c Release
-          dotnet test tests/PhoneEdge.Phone.Tests/PhoneEdge.Phone.Tests.csproj -c Release
+          dotnet test tests/Twinput.App.Tests/Twinput.App.Tests.csproj -c Release
+          dotnet test tests/Twinput.Phone.Tests/Twinput.Phone.Tests.csproj -c Release
 
       - uses: actions/setup-java@v4
         with:
@@ -109,7 +113,7 @@ jobs:
           if ($env:COMPANION_KEYSTORE_FILE -and (Test-Path $env:COMPANION_KEYSTORE_FILE)) { Remove-Item $env:COMPANION_KEYSTORE_FILE -Force }
 
       - name: publish (self-contained win-x64)
-        run: dotnet publish src/PhoneEdge.App/PhoneEdge.App.csproj -c Release -r win-x64 --self-contained -o publish
+        run: dotnet publish src/Twinput.App/Twinput.App.csproj -c Release -r win-x64 --self-contained -o publish
 
       - name: 도우미 앱이 패키지에 들어갔는지 확인
         shell: pwsh
@@ -124,17 +128,17 @@ jobs:
       - name: 이전 릴리스 받기
         shell: pwsh
         continue-on-error: true
-        run: vpk download github --repoUrl "${{ github.server_url }}/${{ github.repository }}" --token "${{ secrets.GITHUB_TOKEN }}" --outputDir Releases
+        run: vpk download github --repoUrl "${{ github.server_url }}/${{ github.repository }}" --token "${{ secrets.GITHUB_TOKEN }}" --channel ${{ env.CHANNEL }} --outputDir Releases
 
       - name: 패키지 만들기
         shell: pwsh
         run: |
-          vpk pack --packId PhoneEdge --packVersion $env:VERSION --packDir publish --mainExe PhoneEdge.exe `
-            --packTitle PhoneEdge --packAuthors PhoneEdge --icon src/PhoneEdge.App/Assets/app.ico `
-            --shortcuts StartMenuRoot --releaseNotes RELEASE_NOTES.md --outputDir Releases
+          vpk pack --packId Twinput --packVersion $env:VERSION --packDir publish --mainExe Twinput.exe `
+            --packTitle Twinput --packAuthors Twinput --icon src/Twinput.App/Assets/app.ico `
+            --shortcuts StartMenuRoot --releaseNotes RELEASE_NOTES.md --channel ${{ env.CHANNEL }} --outputDir Releases
 
       - name: GitHub 릴리스 올리기
         shell: pwsh
         run: |
           vpk upload github --repoUrl "${{ github.server_url }}/${{ github.repository }}" --token "${{ secrets.GITHUB_TOKEN }}" `
-            --outputDir Releases --publish --releaseName "PhoneEdge v$env:VERSION" --tag "v$env:VERSION"
+            --channel ${{ env.CHANNEL }} --outputDir Releases --publish --releaseName "Twinput v$env:VERSION" --tag "v$env:VERSION"
