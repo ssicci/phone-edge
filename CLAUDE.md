@@ -10,7 +10,10 @@ Terms follow `CONTEXT.md`. A `CONTEXT.md` in a parent folder, if any, does not a
 - Optional phone companion app (decided 2026-11-25): banking and brokerage apps refuse to run while USB debugging is on, so a small Android app turns USB debugging on when a USB data connection appears and off when it goes away. PhoneEdge grants it `WRITE_SECURE_SETTINGS` once over adb. adb's own "always allow this computer" authorization is what keeps other PCs out. The app needs a foreground service (persistent notification) and Samsung's "unrestricted" battery setting. PhoneEdge must keep working without it.
 - Phone input goes through the scrcpy server's (Apache 2.0) control protocol, which creates a UHID virtual mouse and keyboard. scrcpy's window and mirroring are not used.
 - scrcpy's OTG (AOA) mode is excluded because it needs a USB driver swap on Windows.
-- Wireless (a Bluetooth dongle) will be added later as another implementation of `IPhoneLink`. It is not built now.
+- Wireless link (decided 2026-11-27): a **Waveshare ESP32-S3-Zero** dongle on the PC's USB port acts as a BLE keyboard + mouse (HID over GATT) to the phone, as another implementation of `IPhoneLink`. The laptop's built-in Bluetooth cannot do this: spike 3 (`spike/PhoneEdge.BtHidSpike3`) showed Windows delivers read/subscribe requests for an app's custom GATT service but never for an app-published HID service (0x1812).
+  - The phone bonds with the dongle, not with the PC, so the dongle can move between PCs without re-pairing. The dongle advertises as "PhoneEdge" with a keyboard/mouse appearance; PhoneEdge flashes and updates its firmware automatically.
+  - Default experience needs no phone app: the phone screen size comes from a default or a model choice, and a hotkey returns to the laptop as a fallback. The phone companion app is optional; when installed it reports screen size and rotation to the dongle over BLE for exact edge crossing.
+  - The USB/adb link stays and is used when no dongle is present.
 - Language: C# / .NET 8. The app targets `net8.0-windows10.0.19041.0`.
 
 ## Folders and ownership

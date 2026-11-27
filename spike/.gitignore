@@ -1,0 +1,4 @@
+# Bluetooth HID spike: published exe and the result log the user's run writes
+out/
+bt-hid-result*.txt
+bt-dump.txt

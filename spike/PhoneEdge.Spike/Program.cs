@@ -2,6 +2,7 @@
 //   dotnet run --project spike/PhoneEdge.Spike -- [demo|gain|exit]
 // demo : 커서 진입 → 사각형 이동 → 클릭 → "hello" 입력 (항목 b)
 // gain : 좌측 끝에서 +N 카운트를 천천히/빠르게 보낸 뒤 dumpsys input 의 실제 포인터 위치를 읽어 이득·가속을 잰다 (항목 c)
+// btdump : 폰의 블루투스 본딩 기기 종류(CLASSIC/LE/DUAL)와 HID 호스트 상태 (주소·이 PC 이름 가림) → spike/bt-dump.txt
 // exit : 오른쪽으로 400 이동 후 왼쪽으로 조금씩 밀어 ExitRequested 가 몇 카운트에서 뜨는지 잰다 (항목 c)
 using System.Diagnostics;
 using System.Text.RegularExpressions;
@@ -13,6 +14,31 @@ string adb = Path.Combine(root, "tools", "platform-tools", "adb.exe");
 string server = Path.Combine(root, "tools", "scrcpy-server");
 string mode = args.Length > 0 ? args[0] : "demo";
 double gain = args.Length > 1 ? double.Parse(args[1]) : 2.68;
+
+if (mode == "btdump") // 폰의 본딩 기기 종류(CLASSIC/LE/DUAL)와 HID 호스트 상태. 주소는 끝 2바이트만, 이 PC 이름은 가린다.
+{
+    string raw = await RunAdb("shell dumpsys bluetooth_manager");
+    string pc = Environment.MachineName;
+    string Mask(string l)
+    {
+        l = Regex.Replace(l, @"\b([0-9A-Fa-f]{2}:){4}([0-9A-Fa-f]{2}:[0-9A-Fa-f]{2})\b", "XX:XX:XX:XX:$2");
+        return pc.Length > 0 ? Regex.Replace(l, Regex.Escape(pc), "<this PC>", RegexOptions.IgnoreCase) : l;
+    }
+    var outLines = new List<string>();
+    bool inBonded = false;
+    foreach (var line in raw.Split('\n').Select(l => l.TrimEnd('\r')))
+    {
+        if (Regex.IsMatch(line, @"(?i)bonded devices")) inBonded = true;
+        else if (inBonded && line.Trim().Length == 0) inBonded = false;
+        if (inBonded || Regex.IsMatch(line, @"(?i)(hid|hogp|\bDUAL\b|\bCLASSIC\b|\bBREDR\b|transport|device ?type|bond)"))
+            outLines.Add(Mask(line));
+    }
+    string dumpFile = Path.Combine(root, "spike", "bt-dump.txt");
+    File.WriteAllLines(dumpFile, outLines);
+    Console.WriteLine(string.Join("\n", outLines.Take(200)));
+    Console.WriteLine($"({outLines.Count} lines of {raw.Split('\n').Length}, saved to spike/bt-dump.txt)");
+    return;
+}
 
 await using var link = new AdbPhoneLink(adb, server, new AdbPhoneLinkOptions { Log = m => Console.WriteLine("  · " + m), CursorGain = gain, CompanionApkPath = Environment.GetEnvironmentVariable("PHONEEDGE_COMPANION_APK") });
 var ready = new TaskCompletionSource();
